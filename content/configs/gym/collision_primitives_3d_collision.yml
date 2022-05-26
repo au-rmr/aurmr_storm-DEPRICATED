@@ -27,14 +27,17 @@ world_model:
         radius: 0.01 #5 # meters
         position: [0.4, 0.4, -0.4]
     cube:
-    #  cube1:
-    #    dims: [0.3, 0.1, 0.4] # x, y, z
-    #    pose: [0.4, 0.2, 0.2, 0, 0, 0, 1.0] # x, y, z, qx, qy, qz, qw
+      # Stand Definition
+      cube1: # across
+        dims: [0.09, 1.53, 0.045] # x, y, z
+        pose: [0.4050, 0.0281, 0.0, -0.707, 0, 0, 0.707] # x, y, z, qx, qy, qz, qw
 
-    #  cube2:
-    #    dims: [0.3, 0.1, 0.5] # x, y, z
-    #    pose: [0.4, -0.3, 0.2, 0, 0, 0, 1.0] # x, y, z, qx, qy, qz, qw
+      cube2: # right
+        dims: [0.9, 0.09, 0.0562] # x, y, z
+        pose: [0.0, -0.0225, -0.72, -0.707, 0, 0, 0.707] # x, y, z, qx, qy, qz, qw
         
-      cube3:
-        dims: [2.0, 2.0, 0.2] # x, y, z
-        pose: [0.0, 0.0, -0.1, 0, 0, 0, 1.0] # x, y, z, qx, qy, qz, qw
+      cube3: # left
+        dims: [.9, .09, .0562] # x, y, z
+        pose: [0, -0.0225, .72, -0.707, 0, 0, 0.707] # x, y, z, qx, qy, qz, qw
+
+      # Pod Definition

@@ -1,0 +1,30 @@
+robot: 'ur16e'
+collision_spheres:
+    shoulder_link:
+        - "center": [0.0, 0.0, 0.0] #x, y, z
+          "radius": 0.12
+    upper_arm_link:
+        - "center": [0.0, 0.0, 0.0]
+          "radius": 0.115 #0.5
+        - "center": [0.0, 0.0, 0.2304]
+          "radius": 0.115 #0.5
+        - "center": [0.0, 0.0, 0.445]
+          "radius": 0.0945 #0.5
+        - "center": [0.0, 0.0, 0.630]
+          "radius": 0.0945 #0.5
+    forearm_link:
+        - "center": [0.0, 0.0, 0.0]
+          "radius": 0.0849 #0.4
+        - "center": [0.0, 0.0, 0.170]
+          "radius": 0.0851 #0.4
+        - "center": [0.0, 0.0, 0.340]
+          "radius": 0.0851 #0.5
+    wrist_1_link:
+        - "center": [0.0, 0.1225, 0.0095]
+          "radius": 0.0813
+    wrist_2_link:
+        - "center": [0.0, 0.1162, 0.007]
+          "radius": 0.0774
+    wrist_3_link:
+        - "center": [0.0, 0.0924, 0.0031]
+          "radius": 0.0 #0.0549

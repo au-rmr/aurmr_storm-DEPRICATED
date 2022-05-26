@@ -26,6 +26,7 @@
 import copy
 from isaacgym import gymapi
 from isaacgym import gymutil
+from isaacgym import gymapi
 
 import torch
 torch.multiprocessing.set_start_method('spawn',force=True)
@@ -65,8 +66,8 @@ np.set_printoptions(precision=2)
 def mpc_robot_interactive(args, gym_instance):
     vis_ee_target = True
     robot_file = args.robot + '.yml'
-    task_file = args.robot + '_reacher.yml'
-    world_file = 'collision_primitives_3d.yml'
+    task_file = args.robot + '_reacher_collision.yml'
+    world_file = 'collision_primitives_3d_collision.yml'
 
     
     gym = gym_instance.gym
@@ -84,7 +85,6 @@ def mpc_robot_interactive(args, gym_instance):
         device = 'cuda'
     else:
         device = 'cpu'
-
     sim_params['collision_model'] = None
     # create robot simulation:
     robot_sim = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
@@ -92,11 +92,8 @@ def mpc_robot_interactive(args, gym_instance):
     
     # create gym environment:
     robot_pose = sim_params['robot_pose']
-    robot_pose2 = copy.deepcopy(robot_pose)
-    robot_pose2[0] = 2.0
     env_ptr = gym_instance.env_list[0]
     robot_ptr = robot_sim.spawn_robot(env_ptr, robot_pose, coll_id=2)
-    #robot_ptr2 = robot_sim.spawn_robot(env_ptr, robot_pose2, coll_id=2)
 
     device = torch.device('cuda', 0) 
 
@@ -105,12 +102,25 @@ def mpc_robot_interactive(args, gym_instance):
     
 
     # spawn camera:
-    robot_camera_pose = np.array([1.6,-1.5, 1.8,0.707,0.0,0.0,0.707])
-    q = as_float_array(from_euler_angles(-0.5 * 90.0 * 0.01745, 50.0 * 0.01745, 90 * 0.01745))
-    robot_camera_pose[3:] = np.array([q[1], q[2], q[3], q[0]])
+    robot_camera_pose = np.array([2.0, 0.0, 0.0, 0.707,0.0,0.0,0.707])
+    '''q = as_float_array(from_euler_angles(-0.5 * 90.0 * 0.01745, 50.0 * 0.01745, 90 * 0.01745))
+    robot_camera_pose[3:] = np.array([q[1], q[2], q[3], q[0]])'''
 
     
-    robot_sim.spawn_camera(env_ptr, 60, 640, 480, robot_camera_pose)
+    camera_handle = robot_sim.spawn_camera(env_ptr, 60, 640, 480, robot_camera_pose)
+    gym.set_camera_location(camera_handle, env_ptr, gymapi.Vec3(2.0, 0.0, 0.0), gymapi.Vec3(0.0, 0.0, 0.0))
+    print(robot_sim.observe_camera(env_ptr)['robot_camera_pose'])
+
+    '''# configure the ground plane
+    plane_params = gymapi.PlaneParams()
+    plane_params.normal = gymapi.Vec3(0, 1, 0) # z-up!
+    plane_params.distance = 0
+    plane_params.static_friction = 1
+    plane_params.dynamic_friction = 1
+    plane_params.restitution = 0
+
+    # create the ground plane
+    gym.add_ground(sim, plane_params)'''
 
     # get pose
     w_T_r = copy.deepcopy(robot_sim.spawn_robot_pose)
@@ -124,23 +134,6 @@ def mpc_robot_interactive(args, gym_instance):
     w_T_robot[:3,:3] = rot[0]
 
     world_instance = World(gym, sim, env_ptr, world_params, w_T_r=w_T_r)
-    
-
-    
-    table_dims = np.ravel([1.5,2.5,0.7])
-    cube_pose = np.ravel([0.35, -0.0,-0.35,0.0, 0.0, 0.0,1.0])
-    
-
-
-    cube_pose = np.ravel([0.9,0.3,0.4, 0.0, 0.0, 0.0,1.0])
-    
-    table_dims = np.ravel([0.35,0.1,0.8])
-
-    
-    
-    cube_pose = np.ravel([0.35,0.3,0.4, 0.0, 0.0, 0.0,1.0])
-    
-    table_dims = np.ravel([0.3,0.1,0.8])
     
 
     # get camera data:
@@ -161,8 +154,8 @@ def mpc_robot_interactive(args, gym_instance):
 
     mpc_tensor_dtype = {'device':device, 'dtype':torch.float32}
 
-    franka_bl_state = np.array([-0.3, 0.3, 0.2, -2.0, 0.0, 2.4,0.0,
-                                0.0,0.0,0.0,0.0,0.0,0.0,0.0])
+    franka_bl_state = np.array([-0.85, 0.6, 0.2, -1.8, 0.0, 2.4, 0.0,
+                                  10.0, 10.0, 10.0,  0.0, 0.0, 0.0, 0.0])
     x_des_list = [franka_bl_state]
     
     ee_error = 10.0
@@ -170,11 +163,11 @@ def mpc_robot_interactive(args, gym_instance):
     t_step = 0
     i = 0
     x_des = x_des_list[0]
-    
+    print(x_des)
     mpc_control.update_params(goal_state=x_des)
 
     # spawn object:
-    x,y,z = 0.0, 0.0, 0.0
+    x,y,z = -0.5, 1.2, 0.0
     tray_color = gymapi.Vec3(0.8, 0.1, 0.1)
     asset_options = gymapi.AssetOptions()
     asset_options.armature = 0.001
@@ -188,7 +181,8 @@ def mpc_robot_interactive(args, gym_instance):
     
     obj_asset_file = "urdf/mug/movable_mug.urdf" 
     obj_asset_root = get_assets_path()
-    
+
+
     if(vis_ee_target):
         target_object = world_instance.spawn_object(obj_asset_file, obj_asset_root, object_pose, color=tray_color, name='ee_target_object')
         obj_base_handle = gym.get_actor_rigid_body_handle(env_ptr, target_object, 0)
@@ -206,6 +200,10 @@ def mpc_robot_interactive(args, gym_instance):
         tray_color = gymapi.Vec3(0.0, 0.8, 0.0)
         gym.set_rigid_body_color(env_ptr, ee_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, tray_color)
 
+        ## PT Adding Bin
+        #pod_asset_file = "urdf/pod/pod.urdf"
+        #pod_handle = world_instance.spawn_collision_object(pod_asset_file, obj_asset_root, object_pose, name='bin')
+        #pod_body_handle = gym.get_actor_rigid_body_handle(env_ptr, pod_handle, 0)
 
     g_pos = np.ravel(mpc_control.controller.rollout_fn.goal_ee_pos.cpu().numpy())
     
@@ -214,8 +212,8 @@ def mpc_robot_interactive(args, gym_instance):
 
     object_pose.r = gymapi.Quat(g_q[1], g_q[2], g_q[3], g_q[0])
     object_pose = w_T_r * object_pose
-    if(vis_ee_target):
-        gym.set_rigid_transform(env_ptr, obj_base_handle, object_pose)
+    '''if(vis_ee_target):
+        gym.set_rigid_transform(env_ptr, obj_base_handle, object_pose)'''
     n_dof = mpc_control.controller.rollout_fn.dynamics_model.n_dofs
     prev_acc = np.zeros(n_dof)
     ee_pose = gymapi.Transform()
@@ -236,11 +234,17 @@ def mpc_robot_interactive(args, gym_instance):
     g_pos = np.ravel(mpc_control.controller.rollout_fn.goal_ee_pos.cpu().numpy())
     g_q = np.ravel(mpc_control.controller.rollout_fn.goal_ee_quat.cpu().numpy())
 
+    #pts = np.array([[w_T_r.p.x, w_T_r.p.y, w_T_r.p.z],[w_T_r.p.x + 1, w_T_r.p.y + 1, w_T_r.p.z + 1]])
+    ptsX = np.array([[0,0,0],[2,0,0]])
+    ptsY = np.array([[0,0,0],[0,2,0]])
+    ptsZ = np.array([[0,0,0],[0,0,2]])
+    num = 0.0
     while(i > -100):
         try:
-            step = gym_instance.step()
+            gym_instance.step()
             if(vis_ee_target):
                 pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
+                print('HERE', pose.p.x, pose.p.y, pose.p.z)
                 pose = copy.deepcopy(w_T_r.inverse() * pose)
 
                 if(np.linalg.norm(g_pos - np.ravel([pose.p.x, pose.p.y, pose.p.z])) > 0.00001 or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))>0.0)):
@@ -260,7 +264,7 @@ def mpc_robot_interactive(args, gym_instance):
             
 
             
-            command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=True)
+            command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
 
             filtered_state_mpc = current_robot_state #mpc_control.current_state
             curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
@@ -286,8 +290,8 @@ def mpc_robot_interactive(args, gym_instance):
             if(vis_ee_target):
                 gym.set_rigid_transform(env_ptr, ee_body_handle, copy.deepcopy(ee_pose))
 
-            print(["{:.3f}".format(x) for x in ee_error], "{:.3f}".format(mpc_control.opt_dt),
-                  "{:.3f}".format(mpc_control.mpc_dt))
+            '''print(["{:.3f}".format(x) for x in ee_error], "{:.3f}".format(mpc_control.opt_dt),
+                  "{:.3f}".format(mpc_control.mpc_dt))'''
         
             
             gym_instance.clear_lines()
@@ -304,9 +308,21 @@ def mpc_robot_interactive(args, gym_instance):
                 color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
                 gym_instance.draw_lines(pts, color=color)
             
+            num += 0.1
+            # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
+            #q_des = np.array([num, 0.0, 0.0, 0.0, 0.0, 0.0])
             robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
-            #robot_sim.set_robot_state(q_des, qd_des, env_ptr, robot_ptr)
             current_state = command
+
+            # PT
+            props = gym.get_actor_dof_properties(env_ptr, robot_ptr)
+            
+            print('q_des', q_des)
+            pts = np.array([[0.0, 0.0, 0.0],[ee_pose.p.x, ee_pose.p.y, ee_pose.p.z]])
+            gym_instance.draw_lines(pts, color=[1.0,0.0,1.0])
+            gym_instance.draw_lines(ptsX, color=[0.5,0.0,0.0])
+            gym_instance.draw_lines(ptsY, color=[0.0,0.5,0.0])
+            gym_instance.draw_lines(ptsZ, color=[0.0,0.0,0.5])
             
             i += 1
 
@@ -324,7 +340,7 @@ if __name__ == '__main__':
     
     # instantiate empty gym:
     parser = argparse.ArgumentParser(description='pass args')
-    parser.add_argument('--robot', type=str, default='franka', help='Robot to spawn')
+    parser.add_argument('--robot', type=str, default='ur16e', help='Robot to spawn')
     parser.add_argument('--cuda', action='store_true', default=True, help='use cuda')
     parser.add_argument('--headless', action='store_true', default=False, help='headless gym')
     parser.add_argument('--control_space', type=str, default='acc', help='Robot to spawn')
@@ -332,8 +348,8 @@ if __name__ == '__main__':
     
     sim_params = load_yaml(join_path(get_gym_configs_path(),'physx.yml'))
     sim_params['headless'] = args.headless
+    #sim_params['up_axis'] = gymapi.UP_AXIS_Z
     gym_instance = Gym(**sim_params)
     
     
     mpc_robot_interactive(args, gym_instance)
-    

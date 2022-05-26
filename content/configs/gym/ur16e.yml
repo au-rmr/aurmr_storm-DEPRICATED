@@ -20,21 +20,23 @@
 ## LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 ## FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ## DEALINGS IN THE SOFTWARE.##
-world_model:
-  coll_objs:
-    sphere:
-      sphere1:
-        radius: 0.01 #5 # meters
-        position: [0.4, 0.4, -0.4]
-    cube:
-    #  cube1:
-    #    dims: [0.3, 0.1, 0.4] # x, y, z
-    #    pose: [0.4, 0.2, 0.2, 0, 0, 0, 1.0] # x, y, z, qx, qy, qz, qw
 
-    #  cube2:
-    #    dims: [0.3, 0.1, 0.5] # x, y, z
-    #    pose: [0.4, -0.3, 0.2, 0, 0, 0, 1.0] # x, y, z, qx, qy, qz, qw
-        
-      cube3:
-        dims: [2.0, 2.0, 0.2] # x, y, z
-        pose: [0.0, 0.0, -0.1, 0, 0, 0, 1.0] # x, y, z, qx, qy, qz, qw
+# @package _global_
+use_cuda: True
+cuda_device_num: 0
+
+
+sim_params:
+  sim_urdf: "urdf/robot_info/robot.urdf"
+  robot_pose: [0.208, 1.915, 0.0, 0.0, 0.707107, -0.707107, 0.0]
+  init_state: [1.00, -1.0, 0.00, -2.0, 0.00, 1.57, 0.78]
+  control_mode: 'torque'
+
+  asset_options:
+    fix_base_link: True
+    flip_visual_attachments: True
+    armature: 0.001
+    disable_gravity: True
+    collapse_fixed_joints: True
+  camera:
+    label_map: {'robot':2, 'ground':0}

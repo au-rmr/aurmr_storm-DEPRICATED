@@ -1,0 +1,66 @@
+robot: 'ur16e'
+collision_spheres:
+    shoulder_link:
+        - "center": [0.0, 0.0, 0.05]
+          "radius": 0.08
+    upper_arm_link:
+        - "center": [0.0, -0.08, 0.0]
+          "radius": 0.06
+        - "center": [0.0, -0.03, 0.0]
+          "radius": 0.06
+        - "center": [0.0, 0.0, -0.12]
+          "radius": 0.06
+        - "center": [0.0, 0.0, -0.17]
+          "radius": 0.06
+    forearm_link:
+        - "center": [0.0, 0.0, 0.03]
+          "radius": 0.06
+        - "center": [0.0, 0.0, 0.08]
+          "radius": 0.06
+        - "center": [0.0, -0.12, 0.0]
+          "radius": 0.06
+        - "center": [0.0, -0.17, 0.0]
+          "radius": 0.06
+    wrist_1_link:
+        - "center": [0.0, 0.0, -0.06]
+          "radius": 0.05
+        - "center": [0.0, 0.0, -0.1]
+          "radius": 0.06
+        - "center": [0.08, 0.06, 0.0]
+          "radius": 0.055
+        - "center": [0.08, 0.02, 0.0]
+          "radius": 0.055
+    wrist_2_link:
+        - "center": [0.0, 0.0, 0.02]
+          "radius": 0.055
+        - "center": [0.0, 0.0, 0.06]
+          "radius": 0.055
+        - "center": [-0.08, 0.095, 0.0]
+          "radius": 0.06
+        - "center": [-0.08, 0.06, 0.0]
+          "radius": 0.055
+    wrist_3_link:
+        - "center": [0.0, 0.055, 0.0]
+          "radius": 0.06
+        - "center": [0.0, 0.075, 0.0]
+          "radius": 0.06
+        - "center": [0.0, 0.000, -0.22]
+          "radius": 0.06
+        - "center": [0.0, 0.05, -0.18]
+          "radius": 0.05
+        - "center": [0.01, 0.08, -0.14]
+          "radius": 0.025
+        - "center": [0.01, 0.085, -0.11]
+          "radius": 0.025
+        - "center": [0.01, 0.09, -0.08]
+          "radius": 0.025
+        - "center": [0.01, 0.095, -0.05]
+          "radius": 0.025
+        - "center": [-0.01, 0.08, -0.14]
+          "radius": 0.025
+        - "center": [-0.01, 0.085, -0.11]
+          "radius": 0.025
+        - "center": [-0.01, 0.09, -0.08]
+          "radius": 0.025
+        - "center": [-0.01, 0.095, -0.05]
+          "radius": 0.025

@@ -96,34 +96,36 @@ def main():
         i += 1
     
     # print out results
-    for link in links:
-        print(str(link))
-        for collision in link.children:
-            print('\t' + str(collision))
+    # for link in links:
+    #     print(str(link))
+    #     for collision in link.children:
+    #         print('\t' + str(collision))
 
-    for key, val in transforms.items():
-        print(key + " -> " + str(val))
+    # for key, val in transforms.items():
+    #     print(key + " -> " + str(val))
 
     f = open('output.txt', 'w')
     cube_num = 1
     for link in links:
         link_name = link.name
         for collision in link.children:
-            print('DEBUG')
-            print(str(collision.x) + " | " + str(transforms[link_name][0]))
+            # print('DEBUG')
+            # print(str(collision.x) + " | " + str(transforms[link_name][0]))
             x_pos = collision.x + transforms[link_name][0]
             y_pos = collision.y + transforms[link_name][1]
             z_pos = collision.z + transforms[link_name][2]
 
             f.write(f"cube{cube_num}:\n")
             f.write(f"  dims: [{collision.x_dim}, {collision.y_dim}, {collision.z_dim}]\n")
-            f.write(f"  pose: [{x_pos}, {z_pos}, {y_pos}, -.707, 0, 0, 0.707]\n")
+            f.write(f"  pose: [{x_pos}, {z_pos}, {y_pos}, -0.707, 0, 0, 0.707]\n")
 
             cube_num += 1
 
 
-
+# specifies a link's name and children(collision objects)
 class Link():
+
+    # specifies dimensions, xyz, and rpy of each collision
     class Collision():
         def __init__(self):
             pass

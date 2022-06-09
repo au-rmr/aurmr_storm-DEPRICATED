@@ -1,6 +1,8 @@
 
 from os import linesep
 
+# FILE_NAME = 'pod.urdf'
+# BASE_LINK = 'pod_base_link'
 FILE_NAME = 'pod.urdf'
 BASE_LINK = 'pod_base_link'
 
@@ -13,8 +15,12 @@ def find_nth(haystack, needle, n):
     return start
 
 # given a property, finds the values between the two quotation marks ("") after the property. returns string
+# ex. extract_property("rpy", line) -> "3.14 0 0"
 def extract_property(property, cur_line):
-    after_prop = cur_line.index(property) + len(property)
+    try:
+        after_prop = cur_line.index(property) + len(property)
+    except:
+        return "0 0 0" # if we don't find the property, just return "0 0 0"
     cur_line = cur_line[after_prop:]
     pos = cur_line.index("\"")
     endpos = cur_line.index("\"", pos + 1)
@@ -22,6 +28,7 @@ def extract_property(property, cur_line):
 
 
 def main():
+    # save urdf as an array of strings (each string is a line in the urdf)
     with open(FILE_NAME) as f:
         urdf = f.readlines()
         f.close()
@@ -59,6 +66,7 @@ def main():
             transform_arr = xyz.split(" ")
             transform = (float(transform_arr[0]), float(transform_arr[1]), float(transform_arr[2]))
 
+            print(f'child: {child}, parent: {parent}')
             transforms[child] = tuple(sum(x) for x in zip(transforms[parent], transform))
         
         # if we see a link, snip it out and add to array
@@ -79,6 +87,7 @@ def main():
                         i += 1
                         line = urdf[i]
                     # we now have origin. extract rpy and xyz
+                    # print(f'line: {line}')
                     rpy = extract_property("rpy", line)
                     rpy_split = rpy.split()
                     collision.set_rpy(float(rpy_split[0]), float(rpy_split[1]), float(rpy_split[2]))
@@ -100,6 +109,7 @@ def main():
 
         # increment i
         i += 1
+    # end while
     
     # print out results
     for link in links:
@@ -110,6 +120,7 @@ def main():
     for key, val in transforms.items():
         print(key + " -> " + str(val))
 
+    # write to output file (output.txt)
     f = open('output.txt', 'w')
     cube_num = 1
     for link in links:
@@ -124,6 +135,7 @@ def main():
             f.write(f"cube{cube_num}:\n")
             f.write(f"  dims: [{collision.x_dim}, {collision.y_dim}, {collision.z_dim}]\n")
             f.write(f"  pose: [{x_pos}, {z_pos}, {y_pos}, -0.707, 0, 0, 0.707]\n")
+            # f.write(f"  pose: [{x_pos}, {z_pos}, {y_pos}, 1, 0, 0, 0]\n")
 
             cube_num += 1
 

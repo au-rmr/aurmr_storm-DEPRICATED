@@ -32,9 +32,13 @@ from quaternion import from_rotation_matrix
 from .helpers import load_struct_from_dict
 from storm_kit.util_file import get_assets_path
 
-ALIGN_UPWARDS = gymapi.Quat(-0.707, 0, 0, 0.707)
+Y_AXIS_UP = gymapi.Quat(-0.707, 0, 0, 0.707)
+Z_AXIS_UP = gymapi.Quat(1, 0, 0, 0)
 ORIGIN = gymapi.Vec3(0, 0, 0)
 POD_TRANSFORM = gymapi.Vec3(.685, 0, -.4125)
+POD_ROTATION = gymapi.Quat(0.5, 0.5, 0.5, -0.5)
+MEDIUM_LIGHTING = gymapi.Vec3(0.8, 0.8, 0.8)
+BRIGHT_LIGHTING = gymapi.Vec3(1, 1, 1)
 
 class Gym(object):
     def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1, headless=False, **kwargs):
@@ -52,10 +56,15 @@ class Gym(object):
         self.headless = headless
 
         self.gym = gymapi.acquire_gym()
+        
+        
         self.sim = self.gym.create_sim(compute_device_id,
                                        graphics_device_id,
                                        physics_engine,
                                        sim_engine_params)
+
+        # collin (setup better lighting)
+        self.gym.set_light_parameters(self.sim, 0, MEDIUM_LIGHTING, MEDIUM_LIGHTING, gymapi.Vec3(1, 2, 3))
 
         self.env_list = []#None
         self.viewer = None
@@ -168,7 +177,7 @@ class World(object):
                 pose = cube[obj]['pose']
                 self.add_table(dims, pose, color=color)
             self.spawn_collision_object("urdf/stand/stand.urdf")
-            self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=gymapi.Quat(0.5, 0.5, 0.5, -0.5))
+            self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
 
     
     def add_table(self, table_dims, table_pose, color=[1.0,0.0,0.0]):
@@ -213,7 +222,7 @@ class World(object):
 
     
     def spawn_collision_object(self, pod_asset_file, name='table', color=[1.0,1.0,0.0],
-                                translation=ORIGIN, rotation=ALIGN_UPWARDS):
+                                translation=ORIGIN, rotation=Y_AXIS_UP):
         ## PT Adding Bin
         #pod_asset_file = "urdf/pod/pod.urdf"
         #pod_asset_file = "urdf/stand/stand.urdf"

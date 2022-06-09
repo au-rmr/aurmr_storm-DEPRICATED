@@ -18,14 +18,14 @@
     <visual>
       <origin rpy="0 0 0" xyz=".4699 .4699 1.303"/>
       <geometry>
-        <mesh filename="package://tahoma_description/meshes/pod/pod_frame.stl"/>
+        <mesh filename="pod_frame.stl"/>
       </geometry>
       <material name="aluminum"/>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz=".4699 .4699 1.303"/>
       <geometry>
-        <mesh filename="package://tahoma_description/meshes/pod/pod_frame.stl"/>
+        <mesh filename="pod_frame.stl"/>
       </geometry>
     </collision>
   </link>

@@ -69,7 +69,8 @@ def mpc_robot_interactive(args, gym_instance):
     task_file = args.robot + '_reacher_collision.yml'
     world_file = 'collision_primitives_3d_collision.yml'
 
-    
+    print(type(args.camera_pose))
+    print(args.camera_pose)
     gym = gym_instance.gym
     sim = gym_instance.sim
     world_yml = join_path(get_gym_configs_path(), world_file)
@@ -102,14 +103,8 @@ def mpc_robot_interactive(args, gym_instance):
     
 
     # spawn camera:
-    robot_camera_pose = np.array([2.0, 0.0, 0.0, 0.707,0.0,0.0,0.707])
-    '''q = as_float_array(from_euler_angles(-0.5 * 90.0 * 0.01745, 50.0 * 0.01745, 90 * 0.01745))
-    robot_camera_pose[3:] = np.array([q[1], q[2], q[3], q[0]])'''
+    robot_sim.spawn_camera(env_ptr, 60, 640, 480, np.array(args.camera_pose))
 
-    
-    camera_handle = robot_sim.spawn_camera(env_ptr, 60, 640, 480, robot_camera_pose)
-    gym.set_camera_location(camera_handle, env_ptr, gymapi.Vec3(2.0, 0.0, 0.0), gymapi.Vec3(0.0, 0.0, 0.0))
-    print(robot_sim.observe_camera(env_ptr)['robot_camera_pose'])
 
     '''# configure the ground plane
     plane_params = gymapi.PlaneParams()
@@ -141,20 +136,10 @@ def mpc_robot_interactive(args, gym_instance):
 
     n_dof = mpc_control.controller.rollout_fn.dynamics_model.n_dofs
 
-    
-    start_qdd = torch.zeros(n_dof, **tensor_args)
-
-    # update goal:
-
-    exp_params = mpc_control.exp_params
-    
-    current_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-    ee_list = []
-    
 
     mpc_tensor_dtype = {'device':device, 'dtype':torch.float32}
 
-    franka_bl_state = np.array([-0.85, 0.6, 0.2, -1.8, 0.0, 2.4, 0.0,
+    '''franka_bl_state = np.array([-0.85, 0.6, 0.2, -1.8, 0.0, 2.4, 0.0,
                                   10.0, 10.0, 10.0,  0.0, 0.0, 0.0, 0.0])
     x_des_list = [franka_bl_state]
     
@@ -163,8 +148,13 @@ def mpc_robot_interactive(args, gym_instance):
     t_step = 0
     i = 0
     x_des = x_des_list[0]
-    print(x_des)
-    mpc_control.update_params(goal_state=x_des)
+    print(type(x_des))
+    mpc_control.update_params(goal_state=x_des)'''
+    j = 0
+    t_step = 0
+    i = 0
+    mpc_control.update_params(goal_state=np.array([-0.85, 0.6, 0.2, -1.8, 0.0, 2.4, 0.0,
+                                  10.0, 10.0, 10.0,  0.0, 0.0, 0.0, 0.0]))
 
     # spawn object:
     x,y,z = -0.5, 1.2, 0.0
@@ -344,6 +334,7 @@ if __name__ == '__main__':
     parser.add_argument('--cuda', action='store_true', default=True, help='use cuda')
     parser.add_argument('--headless', action='store_true', default=False, help='headless gym')
     parser.add_argument('--control_space', type=str, default='acc', help='Robot to spawn')
+    parser.add_argument('--camera_pose', nargs='+', type=float, default=[2.0, 0.0, 0.0, 0.707,0.0,0.0,0.707], help='Where to spawn camera')
     args = parser.parse_args()
     
     sim_params = load_yaml(join_path(get_gym_configs_path(),'physx.yml'))

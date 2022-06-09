@@ -1,0 +1,8 @@
+Not connected to PVD
+Physics Engine: PhysX
+Physics Device: cpu
+GPU Pipeline: disabled
+Importing module 'gym_37' (/home/patorrad/Downloads/isaacgym/python/isaacgym/_bindings/linux-x86_64/gym_37.so)
+Setting GYM_USD_PLUG_INFO_PATH to /home/patorrad/Downloads/isaacgym/python/isaacgym/_bindings/linux-x86_64/usd/plugInfo.json
+<class 'list'>
+[2.0, 0.0, 0.0, 0.707, 0.0, 0.0, 0.707]

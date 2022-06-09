@@ -32,6 +32,10 @@ from quaternion import from_rotation_matrix
 from .helpers import load_struct_from_dict
 from storm_kit.util_file import get_assets_path
 
+ALIGN_UPWARDS = gymapi.Quat(-0.707, 0, 0, 0.707)
+ORIGIN = gymapi.Vec3(0, 0, 0)
+POD_TRANSFORM = gymapi.Vec3(.685, 0, -.4125)
+
 class Gym(object):
     def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1, headless=False, **kwargs):
 
@@ -44,6 +48,7 @@ class Gym(object):
         
         # find params in kwargs and fill up here:
         sim_engine_params = load_struct_from_dict(sim_engine_params, sim_params)
+        # sim_engine_params.up_axis = gymapi.UP_AXIS_Z # collin
         self.headless = headless
 
         self.gym = gymapi.acquire_gym()
@@ -163,7 +168,7 @@ class World(object):
                 pose = cube[obj]['pose']
                 self.add_table(dims, pose, color=color)
             self.spawn_collision_object("urdf/stand/stand.urdf")
-            self.spawn_collision_object("urdf/pod/pod.urdf")
+            self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=gymapi.Quat(0.5, 0.5, 0.5, -0.5))
 
     
     def add_table(self, table_dims, table_pose, color=[1.0,0.0,0.0]):
@@ -207,7 +212,8 @@ class World(object):
         return pose
 
     
-    def spawn_collision_object(self, pod_asset_file, name='table', color=[1.0,1.0,0.0]):
+    def spawn_collision_object(self, pod_asset_file, name='table', color=[1.0,1.0,0.0],
+                                translation=ORIGIN, rotation=ALIGN_UPWARDS):
         ## PT Adding Bin
         #pod_asset_file = "urdf/pod/pod.urdf"
         #pod_asset_file = "urdf/stand/stand.urdf"
@@ -217,8 +223,8 @@ class World(object):
         asset_options.armature = 0.001
         asset_options.fix_base_link = True
         pose = gymapi.Transform()
-        pose.p = gymapi.Vec3(0, 0, 0)
-        pose.r = gymapi.Quat(-0.707, 0, 0, 0.707)
+        pose.p = translation
+        pose.r = rotation
         #pose = self.robot_pose * pose
         obj_color = gymapi.Vec3(color[0], color[1], color[2])
         obj_asset = self.gym.load_asset(self.sim, obj_asset_root, pod_asset_file, asset_options)

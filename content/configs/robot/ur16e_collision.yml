@@ -1,3 +1,4 @@
+# This file definds collision spheres of the arm as per RelaxedIK (https://graphics.cs.wisc.edu/Papers/2018/RMG18a/p43.pdf)
 robot: 'ur16e'
 collision_spheres:
     shoulder_link:

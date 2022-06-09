@@ -1,16 +1,28 @@
 
 from os import linesep
 
+FILE_NAME = 'pod.urdf'
+BASE_LINK = 'pod_base_link'
+
+# finds index of nth occurrence of needle within haystack
 def find_nth(haystack, needle, n):
     start = haystack.find(needle)
     while start >= 0 and n > 1:
         start = haystack.find(needle, start+len(needle))
         n -= 1
     return start
-    
+
+# given a property, finds the values between the two quotation marks ("") after the property. returns string
+def extract_property(property, cur_line):
+    after_prop = cur_line.index(property) + len(property)
+    cur_line = cur_line[after_prop:]
+    pos = cur_line.index("\"")
+    endpos = cur_line.index("\"", pos + 1)
+    return cur_line[pos + 1:endpos]
+
 
 def main():
-    with open('stand.urdf') as f:
+    with open(FILE_NAME) as f:
         urdf = f.readlines()
         f.close()
     
@@ -23,7 +35,7 @@ def main():
     links = []
     i = 0
     transforms = {}
-    transforms["stand"] = (0, 0, 0)
+    transforms[BASE_LINK] = (0, 0, 0)
 
     # iterate through urdf
     while i < len(urdf):
@@ -31,26 +43,20 @@ def main():
 
         # if we see a transform, add it!
         if "parent" in line:
-            pos = line.index("\"")
-            endpos = line.rindex("\"")
-            parent = line[pos + 1:endpos]
+            parent = extract_property("parent", line)
 
             i += 1
             line = urdf[i]
 
             # get child (always after parent)
-            pos = line.index("\"")
-            endpos = line.rindex("\"")
-            child = line[pos + 1:endpos]
+            child = extract_property("child", line)
 
             i += 1
             line = urdf[i]
 
             # get transform
-            pos = find_nth(line, "\"", 3)
-            endpos = find_nth(line, "\"", 4)
-            transform_str = line[pos + 1:endpos]
-            transform_arr = transform_str.split(" ")
+            xyz = extract_property("xyz", line)
+            transform_arr = xyz.split(" ")
             transform = (float(transform_arr[0]), float(transform_arr[1]), float(transform_arr[2]))
 
             transforms[child] = tuple(sum(x) for x in zip(transforms[parent], transform))
@@ -67,17 +73,17 @@ def main():
                 i += 1
                 line = urdf[i]
                 if "<collision>" in line:
-                    collision = link.Collision()
+                    collision = link.Collision() # create collision object
                     # go forward until we see origin
                     while "origin" not in line:
                         i += 1
                         line = urdf[i]
                     # we now have origin. extract rpy and xyz
-                    rpy = line[find_nth(line, "\"", 1) + 1 : find_nth(line, "\"", 2)]
+                    rpy = extract_property("rpy", line)
                     rpy_split = rpy.split()
                     collision.set_rpy(float(rpy_split[0]), float(rpy_split[1]), float(rpy_split[2]))
 
-                    xyz = line[find_nth(line, "\"", 3) + 1 : find_nth(line, "\"", 4)]
+                    xyz = extract_property("xyz", line)
                     xyz_split = xyz.split()
                     collision.set_xyz(float(xyz_split[0]), float(xyz_split[1]), float(xyz_split[2]))
 
@@ -86,8 +92,8 @@ def main():
                         i += 1
                         line = urdf[i]
 
-                    xyz = line[find_nth(line, "\"", 1) + 1 : find_nth(line, "\"", 2)]
-                    xyz_split = xyz.split()
+                    size = extract_property("size", line)
+                    xyz_split = size.split()
                     collision.set_dim(float(xyz_split[0]), float(xyz_split[1]), float(xyz_split[2]))
 
                     link.add_collision(collision)
@@ -96,13 +102,13 @@ def main():
         i += 1
     
     # print out results
-    # for link in links:
-    #     print(str(link))
-    #     for collision in link.children:
-    #         print('\t' + str(collision))
+    for link in links:
+        print(str(link))
+        for collision in link.children:
+            print('\t' + str(collision))
 
-    # for key, val in transforms.items():
-    #     print(key + " -> " + str(val))
+    for key, val in transforms.items():
+        print(key + " -> " + str(val))
 
     f = open('output.txt', 'w')
     cube_num = 1

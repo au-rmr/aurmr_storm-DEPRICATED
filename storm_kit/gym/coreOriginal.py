@@ -30,15 +30,6 @@ except Exception:
 from quaternion import from_rotation_matrix
 
 from .helpers import load_struct_from_dict
-from storm_kit.util_file import get_assets_path
-
-Y_AXIS_UP = gymapi.Quat(-0.707, 0, 0, 0.707)
-Z_AXIS_UP = gymapi.Quat(1, 0, 0, 0)
-ORIGIN = gymapi.Vec3(0, 0, 0)
-POD_TRANSFORM = gymapi.Vec3(.685, 0, -.4125)
-POD_ROTATION = gymapi.Quat(0.5, 0.5, 0.5, -0.5)
-MEDIUM_LIGHTING = gymapi.Vec3(0.8, 0.8, 0.8)
-BRIGHT_LIGHTING = gymapi.Vec3(1, 1, 1)
 
 class Gym(object):
     def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1, headless=False, **kwargs):
@@ -52,27 +43,21 @@ class Gym(object):
         
         # find params in kwargs and fill up here:
         sim_engine_params = load_struct_from_dict(sim_engine_params, sim_params)
-        # sim_engine_params.up_axis = gymapi.UP_AXIS_Z # collin
         self.headless = headless
 
         self.gym = gymapi.acquire_gym()
-        
-        
         self.sim = self.gym.create_sim(compute_device_id,
                                        graphics_device_id,
                                        physics_engine,
                                        sim_engine_params)
-
-        # collin (setup better lighting)
-        self.gym.set_light_parameters(self.sim, 0, MEDIUM_LIGHTING, MEDIUM_LIGHTING, gymapi.Vec3(1, 2, 3))
 
         self.env_list = []#None
         self.viewer = None
         self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
         if(not headless):
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
-            cam_pos = gymapi.Vec3(-1.5, 1.8, -1.2)
-            cam_target = gymapi.Vec3(6, 0.0, 6)
+            cam_pos = gymapi.Vec3(-1.5, 1.8, 1.2)
+            cam_target = gymapi.Vec3(6, 0.0, -6)
             #cam_pos = gymapi.Vec3(2, 2.0, -2)
             #cam_target = gymapi.Vec3(-6, 0.0,6)
             self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
@@ -176,8 +161,7 @@ class World(object):
                 dims = cube[obj]['dims']
                 pose = cube[obj]['pose']
                 self.add_table(dims, pose, color=color)
-            self.spawn_collision_object("urdf/stand/stand.urdf")
-            self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
+            
 
     
     def add_table(self, table_dims, table_pose, color=[1.0,0.0,0.0]):
@@ -208,7 +192,7 @@ class World(object):
         #pose = gymapi.Transform()
         #pose.p = gymapi.Vec3(pose[0], pose[1], pose[2])
         #pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
-        print("HERE", pose.p.x, pose.p.y, pose.p.z, pose.r.x, pose.r.y, pose.r.z, pose.r.w)
+        
         obj_asset = self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
         obj_handle = self.gym.create_actor(self.env_ptr, obj_asset, pose,name,
                                            2,2,self.BG_SEG_LABEL)
@@ -219,28 +203,3 @@ class World(object):
         #pose = pose.p
 
         return pose
-
-    
-    def spawn_collision_object(self, pod_asset_file, name='table', color=[1.0,1.0,0.0],
-                                translation=ORIGIN, rotation=Y_AXIS_UP):
-        ## PT Adding Bin
-        #pod_asset_file = "urdf/pod/pod.urdf"
-        #pod_asset_file = "urdf/stand/stand.urdf"
-        obj_asset_root = get_assets_path()
-        
-        asset_options = gymapi.AssetOptions()
-        asset_options.armature = 0.001
-        asset_options.fix_base_link = True
-        pose = gymapi.Transform()
-        pose.p = translation
-        pose.r = rotation
-        #pose = self.robot_pose * pose
-        obj_color = gymapi.Vec3(color[0], color[1], color[2])
-        obj_asset = self.gym.load_asset(self.sim, obj_asset_root, pod_asset_file, asset_options)
-        obj_handle = self.gym.create_actor(self.env_ptr, obj_asset, pose,name,
-                                           2,2,self.ENV_SEG_LABEL)
-        self.gym.set_rigid_body_color(self.env_ptr, obj_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, obj_color)
-        self.table_handles.append(obj_handle)
-
-
-

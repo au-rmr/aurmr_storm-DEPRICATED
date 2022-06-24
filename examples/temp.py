@@ -324,7 +324,7 @@ def mpc_robot_interactive(args, gym_instance):
             e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
             ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
             ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
-            if(pose_reached()): print('##############################################REACHED##################')
+            #if(pose_reached()): print('##############################################REACHED##################')
             ee_pose = copy.deepcopy(w_T_r) * copy.deepcopy(ee_pose)
             
             if(vis_ee_target):

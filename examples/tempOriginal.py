@@ -47,7 +47,6 @@ import time
 import yaml
 import argparse
 import numpy as np
-import numpy.typing as npt
 from quaternion import quaternion, from_rotation_vector, from_rotation_matrix
 import matplotlib.pyplot as plt
 
@@ -158,7 +157,7 @@ def mpc_robot_interactive(args, gym_instance):
                                   10.0, 10.0, 10.0,  0.0, 0.0, 0.0, 0.0]))
 
     # spawn object:
-    x,y,z = 0.5, 1.2, 0.5
+    x,y,z = 0.5, 1.2, 0.0
     tray_color = gymapi.Vec3(0.8, 0.1, 0.1)
     asset_options = gymapi.AssetOptions()
     asset_options.armature = 0.001
@@ -230,59 +229,12 @@ def mpc_robot_interactive(args, gym_instance):
     ptsY = np.array([[0,0,0],[0,2,0]])
     ptsZ = np.array([[0,0,0],[0,0,2]])
     #num = 0.0
-
-    # Sets goal pose for end effector
-    # Input: Array with coordinates (x, y, z) and quaternion (w, x, y, z)
-    def set_goal(pose:np.ndarray)->bool:
-        goal_pose = gymapi.Transform()
-        goal_pose.p = gymapi.Vec3(pose[0], pose[1], pose[2]) 
-        goal_pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
-        pose = copy.deepcopy(w_T_r.inverse() * goal_pose)
-
-        g_pos[0] = pose.p.x
-        g_pos[1] = pose.p.y
-        g_pos[2] = pose.p.z
-        g_q[0] = pose.r.w
-        g_q[1] = pose.r.x
-        g_q[2] = pose.r.y
-        g_q[3] = pose.r.z
-
-        mpc_control.update_params(goal_ee_pos=g_pos,
-                                    goal_ee_quat=g_q)
-
-        return True
-    
-    #set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-
-    # Output: Returns if goal pose was reached
-    # TODO Include Quaternion 
-    def pose_reached()->bool:
-        g_pos = np.ravel(mpc_control.controller.rollout_fn.goal_ee_pos.cpu().numpy())
-        g_q = np.ravel(mpc_control.controller.rollout_fn.goal_ee_quat.cpu().numpy())
-
-        current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr)) 
-        filtered_state_mpc = current_robot_state
-        curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
-        curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
-        pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
-        e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
-        e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
-        ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
-        ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
-
-        return np.linalg.norm(g_pos - np.ravel([ee_pose.p.x, ee_pose.p.y, ee_pose.p.z])) < 0.002# or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))<0.1)
-
-    def move_robot():
-        current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-        command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
-        q_des = copy.deepcopy(command['position'])
-        robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
-
     while(i > -100):
         try:
             gym_instance.step()
             if(vis_ee_target):
                 pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
+                print('HERE', pose.p.x, pose.p.y, pose.p.z)
                 pose = copy.deepcopy(w_T_r.inverse() * pose)
 
                 if(np.linalg.norm(g_pos - np.ravel([pose.p.x, pose.p.y, pose.p.z])) > 0.00001 or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))>0.0)):
@@ -296,8 +248,6 @@ def mpc_robot_interactive(args, gym_instance):
 
                     mpc_control.update_params(goal_ee_pos=g_pos,
                                               goal_ee_quat=g_q)
-            
-
             t_step += sim_dt
             
             current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
@@ -312,8 +262,8 @@ def mpc_robot_interactive(args, gym_instance):
             curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
             # get position command:
             q_des = copy.deepcopy(command['position'])
-            #qd_des = copy.deepcopy(command['velocity']) #* 0.5
-            #qdd_des = copy.deepcopy(command['acceleration'])
+            qd_des = copy.deepcopy(command['velocity']) #* 0.5
+            qdd_des = copy.deepcopy(command['acceleration'])
             
             ee_error = mpc_control.get_current_error(filtered_state_mpc)
              
@@ -324,7 +274,7 @@ def mpc_robot_interactive(args, gym_instance):
             e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
             ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
             ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
-            if(pose_reached()): print('##############################################REACHED##################')
+            
             ee_pose = copy.deepcopy(w_T_r) * copy.deepcopy(ee_pose)
             
             if(vis_ee_target):
@@ -332,14 +282,8 @@ def mpc_robot_interactive(args, gym_instance):
 
             '''print(["{:.3f}".format(x) for x in ee_error], "{:.3f}".format(mpc_control.opt_dt),
                   "{:.3f}".format(mpc_control.mpc_dt))'''
+        
             
-            #num += 0.1
-            # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
-            #q_des = np.array([num, 0.0, 0.0, 0.0, 0.0, 0.0])
-            robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
-            #current_state = command
-            #move_robot()
-                        
             gym_instance.clear_lines()
             top_trajs = mpc_control.top_trajs.cpu().float()#.numpy()
             n_p, n_t = top_trajs.shape[0], top_trajs.shape[1]
@@ -353,10 +297,17 @@ def mpc_robot_interactive(args, gym_instance):
                 color[0] = float(k) / float(top_trajs.shape[0])
                 color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
                 gym_instance.draw_lines(pts, color=color)
+            
+            #num += 0.1
+            # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
+            #q_des = np.array([num, 0.0, 0.0, 0.0, 0.0, 0.0])
+            robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
+            current_state = command
 
             # PT
             props = gym.get_actor_dof_properties(env_ptr, robot_ptr)
             
+            print('q_des', q_des)
             pts = np.array([[0.0, 0.0, 0.0],[ee_pose.p.x, ee_pose.p.y, ee_pose.p.z]])
             gym_instance.draw_lines(pts, color=[1.0,0.0,1.0])
             gym_instance.draw_lines(ptsX, color=[0.5,0.0,0.0])

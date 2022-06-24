@@ -59,8 +59,10 @@ model:
     sample_points: 100
     link_objs: ['shoulder_link','upper_arm_link','forearm_link','wrist_1_link','wrist_2_link','wrist_3_link']
     #link_objs: ['panda_link6']
+    ###threshold: 0.35
     threshold: 0.35
-    bounds: [[-0.5, -0.8, 0.0],[0.5,0.8,1.0]]
+    bounds: [[-1.0, -1.0, -1.0],[1.0,1.0,1.0]]
+    #bounds: [[-0.5, -0.8, 0.0],[0.5,0.8,1.0]]
     collision_spheres: '../robot/ur16e_collision.yml'
     self_collision_weights: 'robot_self/ur16e_self_sdf.pt'
     dof: 6 #r_shoulder_pan_joint, r_shoulder_lift_joint, r_upper_arm_roll_joint, r_forearm_roll_joint, r_elbow_flex_joint, r_wrist_flex_joint
@@ -70,8 +72,8 @@ model:
     #model_path: '/home/bala/code/scenecollisionnet/weights/scene_coll_nn/'
     model_path: 'scene_coll_nn/'
     label_map: {'robot':2, 'ground':0}
-    bounds: [[-1.0, -1.0, -0.2],[1.0,1.0,1.0]]
-    #bounds: [[-0.5, -0.8, 0.0],[0.5,0.8,1.0]]
+    bounds: [[-1.0, -1.0, -1.0],[1.0,1.0,1.0]]
+    #bounds: [[-1.0, -1.0, -0.2],[1.0,1.0,1.0]]
     grid_resolution: 0.05
 
 cost:
@@ -99,7 +101,7 @@ cost:
     
   primitive_collision:
     weight: 1000.0
-    distance_threshold: 0.05
+    distance_threshold: 0.01
     gaussian_params: {'n':0, 'c':0.0, 's':0, 'r':10.0}
 
   robot_self_collision:

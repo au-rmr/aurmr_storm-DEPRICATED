@@ -28,8 +28,15 @@ cuda_device_num: 0
 
 sim_params:
   sim_urdf: "urdf/robot_info/robot.urdf"
-  robot_pose: [0.208, 1.915, 0.0, 0.0, 0.707107, -0.707107, 0.0]
-  init_state: [1.00, -1.0, 0.00, -2.0, 0.00, 1.57, 0.78]
+  # First Test
+  # robot_pose: [0.208, 1.915, 0.0, 0.0, 0.707107, -0.707107, 0.0]
+  # init_state: [1.00, -1.0, 0.00, -2.0, 0.00, 1.57, 0.78]
+  # Second Test
+  robot_pose: [0.208, 1.915, 0.0, 0.707, 0.0, 0.0, 0.707]
+  init_state: [0.12, -2.0, 1.35, 0.58, 1.67, 1.74]
+  # Figuring out transform
+  # robot_pose: [0.0, 0.0, 0.0, 0.0,  -0.707107, -0.707107, 0.0]
+  # init_state: [0.12, -2.0, 1.35, 0.58, 1.67, 1.74]
   control_mode: 'torque'
 
   asset_options:

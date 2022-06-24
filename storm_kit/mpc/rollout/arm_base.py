@@ -209,7 +209,6 @@ class ArmBase(RolloutBase):
                 coll_cost = self.voxel_collision_cost.forward(link_pos_batch, link_rot_batch)
                 cost += coll_cost
 
-        print('cost:', cost)
         return cost
     
     def rollout_fn(self, start_state, act_seq):

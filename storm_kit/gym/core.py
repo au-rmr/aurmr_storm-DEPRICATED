@@ -137,49 +137,49 @@ class World(object):
         
         self.radius = []
         self.position = []
-        color = [0.6, 0.6, 0.6]
-        obj_color = gymapi.Vec3(color[0], color[1], color[2])
-        asset_options = gymapi.AssetOptions()
-        asset_options.armature = 0.001
-        asset_options.fix_base_link = True
-        asset_options.thickness = 0.002
+        
+        
         self.ENV_SEG_LABEL = 1
         self.BG_SEG_LABEL = 0
         self.robot_pose = w_T_r
         self.table_handles = []
 
+        color = [0.6, 0.6, 0.6]
         if(world_params is None):
             return
-        spheres = world_params['world_model']['coll_objs']['sphere']
-        for obj in spheres.keys():
-            radius = spheres[obj]['radius']
-            position = spheres[obj]['position']
-
-            
-            
-            # get pose
-            
-            object_pose = gymapi.Transform()
-            object_pose.p = gymapi.Vec3(position[0], position[1], position[2])
-            object_pose.r = gymapi.Quat(0, 0, 0,1)
-            object_pose = w_T_r * object_pose
-
-            #
-
-            obj_asset = gym_instance.create_sphere(sim_instance,radius, asset_options)
-            obj_handle = gym_instance.create_actor(env_ptr, obj_asset, object_pose, obj, 2, 2, self.ENV_SEG_LABEL)
-            gym_instance.set_rigid_body_color(env_ptr, obj_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, obj_color)
-
+        
+        if('sphere' in world_params['world_model']['coll_objs']):
+            spheres = world_params['world_model']['coll_objs']['sphere']
+            for obj in spheres.keys():
+                radius = spheres[obj]['radius']
+                position = spheres[obj]['position']
+                
+                self.add_sphere(radius, position, color=color)
+  
         if('cube' in world_params['world_model']['coll_objs']):
             cube = world_params['world_model']['coll_objs']['cube']
             for obj in cube.keys():
                 dims = cube[obj]['dims']
                 pose = cube[obj]['pose']
                 self.add_table(dims, pose, color=color)
-            self.spawn_collision_object("urdf/stand/stand.urdf")
-            self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
+        
+        #self.spawn_collision_object("urdf/stand/stand.urdf")
+        #self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
 
-    
+    def add_sphere(self, radius, sphere_pose, color=[1.0,0.0,0.0]):
+        asset_options = gymapi.AssetOptions()
+        asset_options.armature = 0.001
+        asset_options.fix_base_link = True
+        asset_options.thickness = 0.002
+        obj_color = gymapi.Vec3(color[0], color[1], color[2])
+        object_pose = gymapi.Transform()
+        object_pose.p = gymapi.Vec3(sphere_pose[0], sphere_pose[1], sphere_pose[2])
+        object_pose.r = gymapi.Quat(0, 0, 0,1)
+        object_pose = self.robot_pose * object_pose
+        obj_asset = self.gym.create_sphere(self.sim,radius, asset_options)
+        obj_handle = self.gym.create_actor(self.env_ptr, obj_asset, object_pose, 'sphere', 2, 2, self.ENV_SEG_LABEL)
+        self.gym.set_rigid_body_color(self.env_ptr, obj_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, obj_color)
+
     def add_table(self, table_dims, table_pose, color=[1.0,0.0,0.0]):
 
         table_dims = gymapi.Vec3(table_dims[0], table_dims[1], table_dims[2])
@@ -208,7 +208,6 @@ class World(object):
         #pose = gymapi.Transform()
         #pose.p = gymapi.Vec3(pose[0], pose[1], pose[2])
         #pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
-        print("HERE", pose.p.x, pose.p.y, pose.p.z, pose.r.x, pose.r.y, pose.r.z, pose.r.w)
         obj_asset = self.gym.load_asset(self.sim, asset_root, asset_file, asset_options)
         obj_handle = self.gym.create_actor(self.env_ptr, obj_asset, pose,name,
                                            2,2,self.BG_SEG_LABEL)
@@ -216,16 +215,13 @@ class World(object):
 
     def get_pose(self, body_handle):
         pose = self.gym.get_rigid_transform(self.env_ptr, body_handle)
-        #pose = pose.p
 
         return pose
 
     
     def spawn_collision_object(self, pod_asset_file, name='table', color=[1.0,1.0,0.0],
                                 translation=ORIGIN, rotation=Y_AXIS_UP):
-        ## PT Adding Bin
-        #pod_asset_file = "urdf/pod/pod.urdf"
-        #pod_asset_file = "urdf/stand/stand.urdf"
+
         obj_asset_root = get_assets_path()
         
         asset_options = gymapi.AssetOptions()

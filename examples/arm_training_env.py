@@ -115,8 +115,8 @@ class TahomaEnv(IsaacGymEnv):
         self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
         self.move_robot()
         self.draw_lines()
-        # done = np.array([False, False])
-        # reward = self.get_reward(pose_reached, action)
+        done = np.array([False, False])
+        reward = self.get_reward(pose_reached, action)
         # ob = self.get_obs()
         # return ob, reward, done, None
     

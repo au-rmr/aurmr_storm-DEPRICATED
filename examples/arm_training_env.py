@@ -35,7 +35,7 @@ from storm_kit.differentiable_robot_model.coordinate_transform import quaternion
 from storm_kit.mpc.task.reacher_task import ReacherTask
 np.set_printoptions(precision=2)
 
-
+from typing import Union
 
 class IsaacGymEnv():
     def __init__(self, args, gym_instance):
@@ -113,10 +113,10 @@ class TahomaEnv(IsaacGymEnv):
         pose_reached = self.pose_reached()
         if (pose_reached): print('######################REACHED#####################')
         self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-        self.move_robot()
+        q_des, qd_des, qdd_des = self.move_robot()
         self.draw_lines()
-        done = np.array([False, False])
-        reward = self.get_reward(pose_reached, action)
+        # done = np.array([False, False])
+        # reward = self.get_reward(pose_reached, action)
         # ob = self.get_obs()
         # return ob, reward, done, None
     
@@ -163,11 +163,14 @@ class TahomaEnv(IsaacGymEnv):
         return test < 0.002
         #return np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z])) < 0.002# or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))<0.1)
 
-    def move_robot(self):
+    def move_robot(self) -> Union[np.array, np.array, np.array]:
         current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
         command = self.mpc_control.get_command(self.t_step, current_robot_state, control_dt=self.sim_dt, WAIT=False)
         q_des = copy.deepcopy(command['position'])
+        qd_des = copy.deepcopy(command['velocity'])
+        qdd_des = copy.deepcopy(command['acceleration'])
         self.robot_sim.command_robot_position(q_des, self.env_ptr, self.robot_ptr)
+        return q_des, qd_des, qdd_des
 
     def draw_lines(self):
         self.gym_instance.clear_lines()

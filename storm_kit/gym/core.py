@@ -138,7 +138,6 @@ class World(object):
         self.radius = []
         self.position = []
         
-        
         self.ENV_SEG_LABEL = 1
         self.BG_SEG_LABEL = 0
         self.robot_pose = w_T_r
@@ -163,8 +162,8 @@ class World(object):
                 pose = cube[obj]['pose']
                 self.add_table(dims, pose, color=color)
         
-        #self.spawn_collision_object("urdf/stand/stand.urdf")
-        #self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
+        self.spawn_collision_object("urdf/stand/stand.urdf")
+        self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
 
     def add_sphere(self, radius, sphere_pose, color=[1.0,0.0,0.0]):
         asset_options = gymapi.AssetOptions()

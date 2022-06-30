@@ -54,6 +54,8 @@ class Gym(object):
         sim_engine_params = load_struct_from_dict(sim_engine_params, sim_params)
         # sim_engine_params.up_axis = gymapi.UP_AXIS_Z # collin
         self.headless = headless
+        # gravity
+        # sim_engine_params.gravity = gymapi.Vec3(0.0, -9.8, 0.0)
 
         self.gym = gymapi.acquire_gym()
         
@@ -76,7 +78,9 @@ class Gym(object):
             #cam_pos = gymapi.Vec3(2, 2.0, -2)
             #cam_target = gymapi.Vec3(-6, 0.0,6)
             self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
-        #self.gym.add_ground(self.sim, gymapi.PlaneParams())
+        
+        if sim_params['add_ground']:
+            self.gym.add_ground(self.sim, gymapi.PlaneParams())
 
         self.dt = sim_engine_params.dt
     def step(self):
@@ -141,6 +145,7 @@ class World(object):
         self.ENV_SEG_LABEL = 1
         self.BG_SEG_LABEL = 0
         self.robot_pose = w_T_r
+        self.sphere_handles = []
         self.table_handles = []
 
         color = [0.6, 0.6, 0.6]
@@ -152,8 +157,8 @@ class World(object):
             for obj in spheres.keys():
                 radius = spheres[obj]['radius']
                 position = spheres[obj]['position']
-                
-                self.add_sphere(radius, position, color=color)
+                fix = spheres[obj]['fix']
+                self.add_sphere(radius, position, fix, color=color)
   
         if('cube' in world_params['world_model']['coll_objs']):
             cube = world_params['world_model']['coll_objs']['cube']
@@ -165,19 +170,22 @@ class World(object):
         self.spawn_collision_object("urdf/stand/stand.urdf")
         self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
 
-    def add_sphere(self, radius, sphere_pose, color=[1.0,0.0,0.0]):
+    def add_sphere(self, radius, sphere_pose, fix=True, color=[1.0,0.0,0.0]):
         asset_options = gymapi.AssetOptions()
         asset_options.armature = 0.001
-        asset_options.fix_base_link = True
+        asset_options.fix_base_link = fix
         asset_options.thickness = 0.002
+        asset_options.density = 1
+        
         obj_color = gymapi.Vec3(color[0], color[1], color[2])
         object_pose = gymapi.Transform()
         object_pose.p = gymapi.Vec3(sphere_pose[0], sphere_pose[1], sphere_pose[2])
         object_pose.r = gymapi.Quat(0, 0, 0,1)
         object_pose = self.robot_pose * object_pose
         obj_asset = self.gym.create_sphere(self.sim,radius, asset_options)
-        obj_handle = self.gym.create_actor(self.env_ptr, obj_asset, object_pose, 'sphere', 2, 2, self.ENV_SEG_LABEL)
-        self.gym.set_rigid_body_color(self.env_ptr, obj_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, obj_color)
+        sphere_handle = self.gym.create_actor(self.env_ptr, obj_asset, object_pose, 'sphere', 2, 2, self.ENV_SEG_LABEL)
+        self.gym.set_rigid_body_color(self.env_ptr, sphere_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, obj_color)
+        self.sphere_handles.append(sphere_handle)
 
     def add_table(self, table_dims, table_pose, color=[1.0,0.0,0.0]):
 

@@ -104,7 +104,8 @@ class TahomaEnv(IsaacGymEnv):
     def __init__(self, args, gym_instance):
         super().__init__(args, gym_instance)
         self.ee_pose = gymapi.Transform()
-
+        self.distance_to_goal = None
+        self.min_distance_to_goal = 0.002
 
 
     def step(self, action):
@@ -115,8 +116,8 @@ class TahomaEnv(IsaacGymEnv):
         self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
         q_des, qd_des, qdd_des = self.move_robot()
         self.draw_lines()
-        # done = np.array([False, False])
-        # reward = self.get_reward(pose_reached, action)
+        done = np.array([False, False])
+        reward = self.get_reward(pose_reached)#, action)
         # ob = self.get_obs()
         # return ob, reward, done, None
     
@@ -141,10 +142,7 @@ class TahomaEnv(IsaacGymEnv):
 
         self.mpc_control.update_params(goal_ee_pos=g_pos, goal_ee_quat=g_q)
 
-
-    # Output: Returns if goal pose was reached
-    # TODO Include Quaternion 
-    def pose_reached(self)->bool:
+    def get_distance_to_goal(self)->float:
         g_pos = np.ravel(self.mpc_control.controller.rollout_fn.goal_ee_pos.cpu().numpy())
         g_q = np.ravel(self.mpc_control.controller.rollout_fn.goal_ee_quat.cpu().numpy())
 
@@ -158,10 +156,23 @@ class TahomaEnv(IsaacGymEnv):
         self.ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
         self.ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
 
-        test = np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z]))
-        print(test)
-        return test < 0.002
+        return np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z]))
+
+    # Output: Returns if goal pose was reached
+    # TODO Include Quaternion 
+    def pose_reached(self)->bool:
+        self.distance_to_goal = self.get_distance_to_goal()
+        print(self.distance_to_goal)
+        return self.distance_to_goal < self.min_distance_to_goal
         #return np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z])) < 0.002# or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))<0.1)
+
+    # TODO Implement wether object fell or not to penalize
+    def get_reward(self, pose_reached)->float:
+        self.distance_to_goal = self.get_distance_to_goal()
+        return self.distance_to_goal
+
+    # def get_obs(self):
+        
 
     def move_robot(self) -> Union[np.array, np.array, np.array]:
         current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
@@ -187,3 +198,5 @@ class TahomaEnv(IsaacGymEnv):
             color[0] = float(k) / float(top_trajs.shape[0])
             color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
             self.gym_instance.draw_lines(pts, color=color)
+
+

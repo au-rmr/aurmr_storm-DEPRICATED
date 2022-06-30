@@ -22,10 +22,11 @@
 ## DEALINGS IN THE SOFTWARE.##
 world_model:
   coll_objs:
-    # sphere:
-    #   sphere1:
-    #     radius: 0.1 #5 # meters
-    #     position: [0, 0, 0]
+    sphere:
+      sphere1:
+        radius: 0.5 #5 # meters
+        position: [0, 1, 0]
+        fix: False
     cube:
       # Stand Definition (generated from urdf_parse.py)
       # Right upright

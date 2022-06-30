@@ -165,6 +165,7 @@ class World(object):
             for obj in cube.keys():
                 dims = cube[obj]['dims']
                 pose = cube[obj]['pose']
+                if 'fix' in cube[obj]: fix = cube[obj]['fix']
                 self.add_table(dims, pose, color=color)
         
         self.spawn_collision_object("urdf/stand/stand.urdf")
@@ -183,17 +184,17 @@ class World(object):
         object_pose.r = gymapi.Quat(0, 0, 0,1)
         object_pose = self.robot_pose * object_pose
         obj_asset = self.gym.create_sphere(self.sim,radius, asset_options)
-        sphere_handle = self.gym.create_actor(self.env_ptr, obj_asset, object_pose, 'sphere', 2, 2, self.ENV_SEG_LABEL)
+        sphere_handle = self.gym.create_actor(self.env_ptr, obj_asset, object_pose, 'sphere', 2, 0, self.ENV_SEG_LABEL)
         self.gym.set_rigid_body_color(self.env_ptr, sphere_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, obj_color)
         self.sphere_handles.append(sphere_handle)
 
-    def add_table(self, table_dims, table_pose, color=[1.0,0.0,0.0]):
+    def add_table(self, table_dims, table_pose, fix=True, color=[1.0,0.0,0.0]):
 
         table_dims = gymapi.Vec3(table_dims[0], table_dims[1], table_dims[2])
 
         asset_options = gymapi.AssetOptions()
         asset_options.armature = 0.001
-        asset_options.fix_base_link = True
+        asset_options.fix_base_link = fix
         asset_options.thickness = 0.002
         obj_color = gymapi.Vec3(color[0], color[1], color[2])
         pose = gymapi.Transform()
@@ -204,7 +205,7 @@ class World(object):
 
         table_pose = self.robot_pose * pose
         table_handle = self.gym.create_actor(self.env_ptr, table_asset, table_pose,'table',
-                                             2,2,self.ENV_SEG_LABEL)
+                                             2,0,self.ENV_SEG_LABEL)
         self.gym.set_rigid_body_color(self.env_ptr, table_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, obj_color)
         self.table_handles.append(table_handle)
 

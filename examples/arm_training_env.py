@@ -113,7 +113,11 @@ class TahomaEnv(IsaacGymEnv):
         self.t_step += self.sim_dt
         pose_reached = self.pose_reached()
         if (pose_reached): print('######################REACHED#####################')
-        self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+        test = self.world_instance.sphere_handles[0]
+        obj_body_handle = self.gym_instance.gym.get_actor_rigid_body_handle(self.env_ptr, test, 0)
+        # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+        self.set_goal(self.world_instance.get_pose(obj_body_handle))
+        print(self.world_instance.get_pose(obj_body_handle).p.x, self.world_instance.get_pose(obj_body_handle).p.y, self.world_instance.get_pose(obj_body_handle).p.z)
         q_des, qd_des, qdd_des = self.move_robot()
         self.draw_lines()
         done = np.array([False, False])
@@ -124,12 +128,16 @@ class TahomaEnv(IsaacGymEnv):
     def close(self):
         self.mpc_control.close()
 
-    def set_goal(self, pose:np.ndarray):
-        goal_pose = gymapi.Transform()
-        goal_pose.p = gymapi.Vec3(pose[0], pose[1], pose[2]) 
-        goal_pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
+    def set_goal(self, pose:Union[np.ndarray,gymapi.Transform]):
+        if type(pose) is np.array:
+            goal_pose = gymapi.Transform()
+            goal_pose.p = gymapi.Vec3(pose[0], pose[1], pose[2]) 
+            goal_pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
+        else:
+            goal_pose = copy.deepcopy(pose)
+            
         pose = copy.deepcopy(self.w_T_r.inverse() * goal_pose)
-
+        print(pose.p.x, pose.p.y, pose.p.z)
         g_pos = np.zeros(3)
         g_q = np.zeros(4)
         g_pos[0] = pose.p.x

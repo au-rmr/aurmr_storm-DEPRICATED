@@ -301,7 +301,7 @@ def mpc_robot_interactive(args, gym_instance):
             t_step += sim_dt
             
             current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-            
+            print(type(current_robot_state))
 
             
             command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)

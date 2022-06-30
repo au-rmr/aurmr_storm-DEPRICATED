@@ -107,23 +107,25 @@ class TahomaEnv(IsaacGymEnv):
         self.distance_to_goal = None
         self.min_distance_to_goal = 0.002
 
+        # Get goal object body handle
+        sphere_handle = self.world_instance.sphere_handles[0] 
+        self.obj_body_handle = self.gym_instance.gym.get_actor_rigid_body_handle(self.env_ptr, sphere_handle, 0)
+
 
     def step(self, action):
         self.gym_instance.step()
         self.t_step += self.sim_dt
         pose_reached = self.pose_reached()
         if (pose_reached): print('######################REACHED#####################')
-        test = self.world_instance.sphere_handles[0]
-        obj_body_handle = self.gym_instance.gym.get_actor_rigid_body_handle(self.env_ptr, test, 0)
         # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-        self.set_goal(self.world_instance.get_pose(obj_body_handle))
-        print(self.world_instance.get_pose(obj_body_handle).p.x, self.world_instance.get_pose(obj_body_handle).p.y, self.world_instance.get_pose(obj_body_handle).p.z)
+        self.set_goal(self.world_instance.get_pose(self.obj_body_handle))
         q_des, qd_des, qdd_des = self.move_robot()
         self.draw_lines()
         done = np.array([False, False])
         reward = self.get_reward(pose_reached)#, action)
-        # ob = self.get_obs()
-        # return ob, reward, done, None
+        print(reward)
+        ob = self.get_obs()
+        return ob, reward, done, None
     
     def close(self):
         self.mpc_control.close()
@@ -137,7 +139,6 @@ class TahomaEnv(IsaacGymEnv):
             goal_pose = copy.deepcopy(pose)
             
         pose = copy.deepcopy(self.w_T_r.inverse() * goal_pose)
-        print(pose.p.x, pose.p.y, pose.p.z)
         g_pos = np.zeros(3)
         g_q = np.zeros(4)
         g_pos[0] = pose.p.x
@@ -179,8 +180,10 @@ class TahomaEnv(IsaacGymEnv):
         self.distance_to_goal = self.get_distance_to_goal()
         return self.distance_to_goal
 
-    # def get_obs(self):
-        
+    def get_obs(self)-> Union[gymapi.Transform, dict]:
+        pose = copy.deepcopy(self.world_instance.get_pose(self.obj_body_handle)) # TODO Need deep copy?
+        current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
+        return pose, current_robot_state
 
     def move_robot(self) -> Union[np.array, np.array, np.array]:
         current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))

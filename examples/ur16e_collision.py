@@ -63,6 +63,27 @@ from storm_kit.util_file import get_mpc_configs_path as mpc_configs_path
 from storm_kit.differentiable_robot_model.coordinate_transform import quaternion_to_matrix, CoordinateTransform
 from storm_kit.mpc.task.reacher_task import ReacherTask
 np.set_printoptions(precision=2)
+import rospy
+
+
+from sensor_msgs.msg import JointState
+
+
+import threading
+
+lock = threading.Lock()
+
+position, velocity = None, None
+
+def callback(msg):
+    global position
+    global velocity
+    global lock
+    with lock:
+        if len(msg.position) == 6:
+            position = msg.position
+            velocity = msg.velocity
+
 
 def mpc_robot_interactive(args, gym_instance):
     vis_ee_target = True
@@ -278,6 +299,13 @@ def mpc_robot_interactive(args, gym_instance):
         q_des = copy.deepcopy(command['position'])
         robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
 
+
+    global position
+    global velocity
+    while not position:
+        print('waiting for initial robot position')
+        rospy.sleep(0.1)
+
     while(i > -100):
         try:
             gym_instance.step()
@@ -302,6 +330,18 @@ def mpc_robot_interactive(args, gym_instance):
             
             current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
             
+            global lock
+            with lock:
+                if position:
+                    current_robot_state['position'] = np.asarray(position)
+                    current_robot_state['velocity'] = np.asarray(velocity)
+
+                    # ..fixme:: storm's robot model differs from the actual model, i.e. the joints have a different order
+                    current_robot_state['position'][0] = position[2]
+                    current_robot_state['velocity'][0] = velocity[2] 
+                    current_robot_state['position'][2] = position[0] 
+                    current_robot_state['velocity'][2] = velocity[0] 
+
 
             
             command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
@@ -376,7 +416,10 @@ def mpc_robot_interactive(args, gym_instance):
     return 1 
     
 if __name__ == '__main__':
-    
+
+    rospy.init_node('test')
+    rospy.Subscriber('joint_states', JointState, callback)
+
     # instantiate empty gym:
     parser = argparse.ArgumentParser(description='pass args')
     parser.add_argument('--robot', type=str, default='ur16e', help='Robot to spawn')
@@ -393,3 +436,5 @@ if __name__ == '__main__':
     
     
     mpc_robot_interactive(args, gym_instance)
+
+    rospy.spin()

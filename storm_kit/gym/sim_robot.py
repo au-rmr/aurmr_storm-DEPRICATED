@@ -86,7 +86,6 @@ class RobotSim():
                                                  robot_asset_options,
                                                  asset_root)
 
-        
     def init_sim(self, gym_instance, sim_instance):
         self.gym = gym_instance
         self.sim = sim_instance
@@ -164,7 +163,7 @@ class RobotSim():
 
         if(self.collision_model_params is not None):
             self.init_collision_model(self.collision_model_params, env_handle, robot_handle)
-
+        
         return robot_handle
     def get_state(self, env_handle, robot_handle):
         robot_state = self.gym.get_actor_dof_states(env_handle, robot_handle, gymapi.STATE_ALL)

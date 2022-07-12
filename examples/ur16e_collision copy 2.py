@@ -99,7 +99,6 @@ def mpc_robot_interactive(args, gym_instance):
     env_ptr = gym_instance.env_list[0]
     robot_ptr = robot_sim.spawn_robot(env_ptr, robot_pose, coll_id=2)
 
-
     device = torch.device('cuda', 0) 
 
     
@@ -179,6 +178,7 @@ def mpc_robot_interactive(args, gym_instance):
 
     if(vis_ee_target):
         target_object = world_instance.spawn_object(obj_asset_file, obj_asset_root, object_pose, color=tray_color, name='ee_target_object')
+        test = gym.get_actor_rigid_body_count(env_ptr, target_object)
         obj_base_handle = gym.get_actor_rigid_body_handle(env_ptr, target_object, 0)
         obj_body_handle = gym.get_actor_rigid_body_handle(env_ptr, target_object, 6)
         gym.set_rigid_body_color(env_ptr, target_object, 0, gymapi.MESH_VISUAL_AND_COLLISION, tray_color)
@@ -277,15 +277,72 @@ def mpc_robot_interactive(args, gym_instance):
         q_des = copy.deepcopy(command['position'])
         robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
 
+    # SECOND ENV
+    gym_instance._create_env()
+    env_ptr2 = gym_instance.env_list[1]
+    robot_ptr2 = robot_sim2.spawn_robot(env_ptr2, robot_pose, coll_id=2)
+    # get pose
+    w_T_r2 = copy.deepcopy(robot_sim2.spawn_robot_pose)
+    w_T_robot2 = torch.eye(4)
+    quat2 = torch.tensor([w_T_r2.r.w,w_T_r2.r.x,w_T_r2.r.y,w_T_r2.r.z]).unsqueeze(0)
+    rot2 = quaternion_to_matrix(quat2)
+    w_T_robot2[0,3] = w_T_r2.p.x
+    w_T_robot2[1,3] = w_T_r2.p.y
+    w_T_robot2[2,3] = w_T_r2.p.z
+    w_T_robot2[:3,:3] = rot2[0]
+
+    world_instance2 = World(gym, sim, env_ptr2, world_params, w_T_r=w_T_r2)
+    mpc_control2 = ReacherTask(task_file, robot_file, world_file, tensor_args)
+    mpc_control2.update_params(goal_state=np.array([-0.85, 0.6, 0.2, -1.8, 0.0, 2.4, 0.0,
+                                  10.0, 10.0, 10.0,  0.0, 0.0, 0.0, 0.0]))
+    x,y,z = 0.5, 1.2, -0.5
+    tray_color = gymapi.Vec3(0.8, 0.1, 0.1)
+    asset_options = gymapi.AssetOptions()
+    asset_options.armature = 0.001
+    asset_options.fix_base_link = True
+    asset_options.thickness = 0.002
+
+
+    object_pose2 = gymapi.Transform()
+    object_pose2.p = gymapi.Vec3(x, y, z)
+    object_pose2.r = gymapi.Quat(0,0.707,0, 0.707)
+
+    obj_asset_file = "urdf/mug/movable_mug.urdf" 
+    obj_asset_root = get_assets_path()
+    if(vis_ee_target):
+        target_object2 = world_instance2.spawn_object(obj_asset_file, obj_asset_root, object_pose2, color=tray_color, name='ee_target_object2')
+        test2 = gym.get_actor_rigid_body_count(env_ptr2, target_object2)
+        obj_base_handle2 = gym.get_actor_rigid_body_handle(env_ptr2, target_object2, 0)
+        obj_body_handle2 = gym.get_actor_rigid_body_handle(env_ptr2, target_object2, 6)
+        gym.set_rigid_body_color(env_ptr2, target_object2, 0, gymapi.MESH_VISUAL_AND_COLLISION, tray_color)
+        gym.set_rigid_body_color(env_ptr2, target_object2, 6, gymapi.MESH_VISUAL_AND_COLLISION, tray_color)
+
+
+        obj_asset_file = "urdf/mug/mug.urdf"
+        obj_asset_root = get_assets_path()
+
+
+        ee_handle2 = world_instance2.spawn_object(obj_asset_file, obj_asset_root, object_pose2, color=tray_color, name='ee_current_as_mug2')
+        
+        ee_body_handle2 = gym.get_actor_rigid_body_handle(env_ptr2, ee_handle2, 0)
+        tray_color = gymapi.Vec3(0.0, 0.8, 0.0)
+        gym.set_rigid_body_color(env_ptr2, ee_handle2, 0, gymapi.MESH_VISUAL_AND_COLLISION, tray_color)
+    q_des2 = None
+    qd_des2 = None
+    ee_pose2 = gymapi.Transform()
+    g_pos2 = np.ravel(mpc_control2.controller.rollout_fn.goal_ee_pos.cpu().numpy())
+    g_q2 = np.ravel(mpc_control2.controller.rollout_fn.goal_ee_quat.cpu().numpy())
+
+    # Second Env
     gym_instance.get_tensor(robot_ptr)
 
-    for index in range(1):
+    for index in range(3):
         cprint.info(index)
-        for jndex in range(10000):
+        for jndex in range(750):
             print(jndex)    
             try:
                 gym_instance.step()
-                print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
+                # print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
                 if(vis_ee_target):
                     pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
                     pose = copy.deepcopy(w_T_r.inverse() * pose)
@@ -301,12 +358,26 @@ def mpc_robot_interactive(args, gym_instance):
 
                         mpc_control.update_params(goal_ee_pos=g_pos,
                                                 goal_ee_quat=g_q)
-                
+                if(vis_ee_target):
+                    pose2 = copy.deepcopy(world_instance2.get_pose(obj_body_handle2))
+                    pose2 = copy.deepcopy(w_T_r2.inverse() * pose2)
+
+                    if(np.linalg.norm(g_pos2 - np.ravel([pose2.p.x, pose2.p.y, pose2.p.z])) > 0.00001 or (np.linalg.norm(g_q2 - np.ravel([pose2.r.w, pose2.r.x, pose2.r.y, pose2.r.z]))>0.0)):
+                        g_pos2[0] = pose2.p.x
+                        g_pos2[1] = pose2.p.y
+                        g_pos2[2] = pose2.p.z
+                        g_q2[1] = pose2.r.x
+                        g_q2[2] = pose2.r.y
+                        g_q2[3] = pose2.r.z
+                        g_q2[0] = pose2.r.w
+
+                        mpc_control2.update_params(goal_ee_pos=g_pos2,
+                                                goal_ee_quat=g_q2)
 
                 t_step += sim_dt
                 
                 current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-
+                
                 
                 command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
 
@@ -366,6 +437,46 @@ def mpc_robot_interactive(args, gym_instance):
                 gym_instance.draw_lines(ptsX, color=[0.5,0.0,0.0])
                 gym_instance.draw_lines(ptsY, color=[0.0,0.5,0.0])
                 gym_instance.draw_lines(ptsZ, color=[0.0,0.0,0.5])
+
+
+                #######
+                current_robot_state2 = copy.deepcopy(robot_sim2.get_state(env_ptr2, robot_ptr2))
+                print('1 ', current_robot_state)
+                print('2 ', current_robot_state2)
+                
+                command2 = mpc_control2.get_command(t_step, current_robot_state2, control_dt=sim_dt, WAIT=False)
+
+                filtered_state_mpc2 = current_robot_state2 #mpc_control.current_state
+                curr_state2 = np.hstack((filtered_state_mpc2['position'], filtered_state_mpc2['velocity'], filtered_state_mpc2['acceleration']))
+
+                curr_state_tensor2 = torch.as_tensor(curr_state2, **tensor_args).unsqueeze(0)
+                # get position command:
+                q_des2 = copy.deepcopy(command2['position'])
+                #qd_des = copy.deepcopy(command['velocity']) #* 0.5
+                #qdd_des = copy.deepcopy(command['acceleration'])
+                
+                ee_error2 = mpc_control2.get_current_error(filtered_state_mpc2)
+                
+                pose_state2 = mpc_control2.controller.rollout_fn.get_ee_pose(curr_state_tensor2)
+                
+                # get current pose:
+                e_pos2 = np.ravel(pose_state2['ee_pos_seq'].cpu().numpy())
+                e_quat2 = np.ravel(pose_state2['ee_quat_seq'].cpu().numpy())
+                ee_pose2.p = copy.deepcopy(gymapi.Vec3(e_pos2[0], e_pos2[1], e_pos2[2]))
+                ee_pose2.r = gymapi.Quat(e_quat2[1], e_quat2[2], e_quat2[3], e_quat2[0])
+                if(pose_reached()): print('##############################################REACHED##################')
+                ee_pose2 = copy.deepcopy(w_T_r2) * copy.deepcopy(ee_pose2)
+                
+                if(vis_ee_target):
+                    gym.set_rigid_transform(env_ptr2, ee_body_handle2, copy.deepcopy(ee_pose2))
+
+                '''print(["{:.3f}".format(x) for x in ee_error], "{:.3f}".format(mpc_control.opt_dt),
+                    "{:.3f}".format(mpc_control.mpc_dt))'''
+                
+                #num += 0.1
+                # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
+                #q_des = np.array([num, 0.0, 0.0, 0.0, 0.0, 0.0])
+                robot_sim2.command_robot_position(q_des2, env_ptr2, robot_ptr2)
                 
                 i += 1
 

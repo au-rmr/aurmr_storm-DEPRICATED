@@ -92,13 +92,12 @@ def mpc_robot_interactive(args, gym_instance):
     sim_params['collision_model'] = None
     # create robot simulation:
     robot_sim = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
-    robot_sim2 = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
+
     
     # create gym environment:
     robot_pose = sim_params['robot_pose']
     env_ptr = gym_instance.env_list[0]
     robot_ptr = robot_sim.spawn_robot(env_ptr, robot_pose, coll_id=2)
-
 
     device = torch.device('cuda', 0) 
 
@@ -190,10 +189,14 @@ def mpc_robot_interactive(args, gym_instance):
 
 
         ee_handle = world_instance.spawn_object(obj_asset_file, obj_asset_root, object_pose, color=tray_color, name='ee_current_as_mug')
-        
         ee_body_handle = gym.get_actor_rigid_body_handle(env_ptr, ee_handle, 0)
         tray_color = gymapi.Vec3(0.0, 0.8, 0.0)
         gym.set_rigid_body_color(env_ptr, ee_handle, 0, gymapi.MESH_VISUAL_AND_COLLISION, tray_color)
+
+        ## PT Adding Bin
+        #pod_asset_file = "urdf/pod/pod.urdf"
+        #pod_handle = world_instance.spawn_collision_object(pod_asset_file, obj_asset_root, object_pose, name='bin')
+        #pod_body_handle = gym.get_actor_rigid_body_handle(env_ptr, pod_handle, 0)
 
     g_pos = np.ravel(mpc_control.controller.rollout_fn.goal_ee_pos.cpu().numpy())
     
@@ -277,15 +280,14 @@ def mpc_robot_interactive(args, gym_instance):
         q_des = copy.deepcopy(command['position'])
         robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
 
-    gym_instance.get_tensor(robot_ptr)
+    gym_instance.get_tensor()
 
-    for index in range(1):
+    for index in range(10): 
         cprint.info(index)
-        for jndex in range(10000):
+        for jndex in range(100):
             print(jndex)    
             try:
                 gym_instance.step()
-                print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
                 if(vis_ee_target):
                     pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
                     pose = copy.deepcopy(w_T_r.inverse() * pose)
@@ -377,9 +379,7 @@ def mpc_robot_interactive(args, gym_instance):
                 done = True
                 break
         
-        # robot_sim.set_robot_state([0.12, -2.0, 1.35, 0.58, 1.67, 1.74], np.zeros(6), env_ptr, robot_ptr)
-        gym_instance.set_tensor(robot_ptr)
-        
+        gym_instance.set_tensor()
 
     mpc_control.close()
     return 1 

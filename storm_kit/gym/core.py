@@ -24,10 +24,12 @@ import numpy as np
 try:
     from  isaacgym import gymapi
     from isaacgym import gymutil
+    from isaacgym import gymtorch
 except Exception:
     print("ERROR: gym not loaded, this is okay when generating docs")
 
 from quaternion import from_rotation_matrix
+import torch
 
 from .helpers import load_struct_from_dict
 from storm_kit.util_file import get_assets_path
@@ -41,7 +43,7 @@ MEDIUM_LIGHTING = gymapi.Vec3(0.8, 0.8, 0.8)
 BRIGHT_LIGHTING = gymapi.Vec3(1, 1, 1)
 
 class Gym(object):
-    def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1, headless=False, **kwargs):
+    def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=2, headless=False, **kwargs):
 
         if(physics_engine=='physx'):
             physics_engine = gymapi.SIM_PHYSX
@@ -56,7 +58,7 @@ class Gym(object):
         self.headless = headless
         # gravity
         # sim_engine_params.gravity = gymapi.Vec3(0.0, -9.8, 0.0)
-
+        # sim_engine_params.physx.use_gpu = True
         self.gym = gymapi.acquire_gym()
         
         
@@ -70,7 +72,8 @@ class Gym(object):
 
         self.env_list = []#None
         self.viewer = None
-        self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
+        # self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
+        self._create_env()
         if(not headless):
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
             cam_pos = gymapi.Vec3(-1.5, 1.8, -1.2)
@@ -83,6 +86,55 @@ class Gym(object):
             self.gym.add_ground(self.sim, gymapi.PlaneParams())
 
         self.dt = sim_engine_params.dt
+
+        self.saved_root_tensor = None
+        self.saved_root_dofs_tensor = None
+        self.dof_targets_tensor = None
+
+    def get_tensor2(self):
+        # acquire root state tensor descriptor
+        _root_tensor = self.gym.acquire_actor_root_state_tensor(self.sim)
+        # Refresh
+        self.gym.refresh_actor_root_state_tensor(self.sim)
+        # wrap it in a PyTorch Tensor
+        root_tensor = gymtorch.wrap_tensor(_root_tensor)
+        # save a copy of the original root states
+        return root_tensor.clone()
+
+    def get_tensor(self, actor_handle):
+        # acquire root state tensor descriptor
+        _root_tensor = self.gym.acquire_actor_root_state_tensor(self.sim)
+        _dof_states = self.gym.acquire_dof_state_tensor(self.sim)
+        # Refresh
+        self.gym.refresh_actor_root_state_tensor(self.sim)
+        self.gym.refresh_dof_state_tensor(self.sim)
+        # wrap it in a PyTorch Tensor
+        root_tensor = gymtorch.wrap_tensor(_root_tensor)
+        dof_tensor = gymtorch.wrap_tensor(_dof_states)
+        # save a copy of the original root states
+        self.saved_root_tensor = root_tensor.clone()
+        self.saved_root_dofs_tensor = dof_tensor.clone()
+
+        # self.dof_targets_tensor = torch.tensor(self.gym.get_actor_dof_position_targets(self.env_list[0], actor_handle), dtype=torch.float32)
+        # self.dof_targets_tensor = self.gym.get_actor_dof_position_targets(self.env_list[0], actor_handle)
+        self.dof_targets_tensor = np.array([ 0.13, -1.99,  1.33,  0.55,  1.64,  1.71], dtype=np.float32)
+        
+
+    def set_tensor(self, actor_handle):
+        self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.saved_root_tensor))
+        # actor_count = self.gym.get_sim_actor_count(self.sim)
+        # actor_index = self.gym.get_actor_index(self.env_list[0], actor_handle, gymapi.DOMAIN_SIM)
+        # actor_indices = torch.tensor([actor_index], dtype=torch.int32)
+        # self.gym.set_actor_root_state_tensor_indexed(self.sim, gymtorch.unwrap_tensor(self.saved_root_tensor), gymtorch.unwrap_tensor(actor_indices), 1)
+        self.gym.set_dof_state_tensor(self.sim, gymtorch.unwrap_tensor(self.saved_root_dofs_tensor))
+        # self.gym.refresh_actor_root_state_tensor(self.sim)
+        # self.gym.refresh_dof_state_tensor(self.sim)
+        self.gym.set_actor_dof_position_targets(self.env_list[0], actor_handle, self.dof_targets_tensor)
+        # self.gym.set_dof_position_target_tensor(self.sim,gymtorch.unwrap_tensor(torch.tensor(self.dof_targets_tensor, dtype=torch.float32))) 
+        # actor_indx = gymtorch.unwrap_tensor(torch.tensor([0], dtype=torch.float32))
+        # buffer = gymtorch.unwrap_tensor(torch.tensor(self.dof_targets_tensor, dtype=torch.float32))
+        # self.gym.set_dof_position_target_tensor_indexed(self.sim, buffer, actor_indx, 1)
+
     def step(self):
         
         ## step through the physics regardless, only apply torque when sim time matches the real time
@@ -107,6 +159,17 @@ class Gym(object):
                 self.sim, lower, upper, num_per_row
             )
             self.env_list.append(env_ptr)
+
+    # PT
+    def _create_env(self, spacing=1.0, num_per_row=1):
+        lower = gymapi.Vec3(-spacing, 0.0, -spacing)
+        upper = gymapi.Vec3(spacing, spacing, spacing)
+
+        env_ptr = self.gym.create_env(
+            self.sim, lower, upper, num_per_row
+        )
+        self.env_list.append(env_ptr)
+    # PT
     def get_sim_time(self):
         return self.gym.get_sim_time(self.sim)
     def clear_lines(self):
@@ -168,8 +231,8 @@ class World(object):
                 if 'fix' in cube[obj]: fix = cube[obj]['fix']
                 self.add_table(dims, pose, color=color)
         
-        self.spawn_collision_object("urdf/stand/stand.urdf")
-        self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
+        # self.spawn_collision_object("urdf/stand/stand.urdf")
+        # self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
 
     def add_sphere(self, radius, sphere_pose, fix=True, color=[1.0,0.0,0.0]):
         asset_options = gymapi.AssetOptions()

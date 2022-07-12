@@ -178,12 +178,12 @@ class TahomaEnv(IsaacGymEnv):
     # TODO Implement wether object fell or not to penalize
     def get_reward(self, pose_reached)->float:
         self.distance_to_goal = self.get_distance_to_goal()
-        return self.distance_to_goal
+        return self.distance_to_goal 
 
     def get_obs(self)-> Union[gymapi.Transform, dict]:
         pose = copy.deepcopy(self.world_instance.get_pose(self.obj_body_handle)) # TODO Need deep copy?
         current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
-        return pose, current_robot_state
+        return pose, current_robot_state # TODO Add multiple object poses
 
     def move_robot(self) -> Union[np.array, np.array, np.array]:
         current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))

@@ -20,14 +20,16 @@
 ## FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ## DEALINGS IN THE SOFTWARE.##
 
-name: storm_kit2
+name: storm_kit_test
 channels:
-  - pytorch
   - conda-forge
+  - robostack
+  - robostack-experimental
+  - pytorch
 dependencies:
-  #- python=3.7
-  #- cudatoolkit=11.1
-  #- pytorch
+  - python=3.8
+  - cudatoolkit=11.3
+  - pytorch
   - torchvision
   - torchaudio
   - pyzmq

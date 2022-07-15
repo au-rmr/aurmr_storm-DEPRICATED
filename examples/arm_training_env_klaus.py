@@ -43,9 +43,10 @@ import threading
 
 REAL_STATE = '/joint_states'
 GOAL_POSE = '/goal_pose'
-# VEL_COMMAND = '/joint_group_vel_controller/command'
-VEL_COMMAND = '/joint_group_pos_controller/command'
+VEL_COMMAND = '/joint_group_vel_controller/command'
+# VEL_COMMAND = '/joint_group_pos_controller/command'
 STROM_RESULT = '/storm_info/result'
+ACTIVATE_CONTROL = '/activate_control'
 
 class IsaacGymEnv():
     def __init__(self, args, gym_instance):
@@ -117,6 +118,7 @@ class Tahoma(IsaacGymEnv):
         super().__init__(args, gym_instance)
         self.ee_pose = gymapi.Transform()
 
+        self.activate_control = False
         self.position = None
         self.velocity = None
         self.goal = None 
@@ -124,7 +126,8 @@ class Tahoma(IsaacGymEnv):
         # , 'acceleration': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
         self.current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
         rospy.Subscriber(REAL_STATE, JointState, self.callback_JS)
-        rospy.Subscriber(GOAL_POSE, PoseStamped, self.callback_G)
+        rospy.Subscriber(GOAL_POSE, PoseStamped, self.callback_GP)
+        rospy.Subscriber(ACTIVATE_CONTROL, Bool, self.callback_AC)
         self.cmd_pub = rospy.Publisher(VEL_COMMAND, Float64MultiArray, queue_size=1)
         self.result_pub = rospy.Publisher(STROM_RESULT, Bool, queue_size=1)
         
@@ -132,30 +135,25 @@ class Tahoma(IsaacGymEnv):
     def step(self, action):
         self.gym_instance.step()
         self.t_step += self.sim_dt
-        pose_reached = self.pose_reached()
-        if (pose_reached):
-            result_tmp = Bool()
-            Bool.data = pose_reached
-            self.result_pub(result_tmp)
         self.synchronize()
 
+        if self.activate_control:
+            while (self.goal is None):
+                print("Waiting for goal.")
+                rospy.sleep(1)
+            print("Current goal: ", self.goal)
+            
+            # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+            self.set_goal(self.goal)
+            # Send flag to state machine
+            self.result_pub(Bool(data=self.pose_reached())) 
+            # Calculate MPC command
+            command = self.get_robot_command()
+            # Publish ROS command to real robot
+            self.send_cmd(command)
+            #  draw_lines() in Issacgym env
+            self.draw_lines() 
         
-        while (self.goal is None):
-            print("Waiting for goal.")
-            rospy.sleep(1)
-        print("Current goal: ", self.goal)
-
-        # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-        self.set_goal(self.goal)
-        
-        # Calculate MPC command
-        command = self.get_robot_command()
-        # Updates green mug/cup in simulation 
-        # self.move_mug()
-        # Publish ROS command to real robot
-        self.send_cmd(command)
-        #  draw_lines() in Issacgym env
-        self.draw_lines() 
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)
         # ob = self.get_obs()
@@ -168,12 +166,14 @@ class Tahoma(IsaacGymEnv):
             self.velocity = msg.velocity[:6]
 
     # callback for goal setting from state machine(or from vision team)
-    def callback_G(self, msg):
+    def callback_GP(self, msg):
         p = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
         q = np.array([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         self.goal = np.concatenate((p, q), axis=None)
-    
 
+    def callback_AC(self, msg):
+        self.activate_control = msg.data
+    
     # sending command to the real robot
     def send_cmd(self, cmd):
         # ROS publish command   

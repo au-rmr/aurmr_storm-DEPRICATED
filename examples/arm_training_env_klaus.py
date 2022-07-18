@@ -137,22 +137,22 @@ class Tahoma(IsaacGymEnv):
         self.t_step += self.sim_dt
         self.synchronize()
 
-        if self.activate_control:
-            while (self.goal is None):
-                print("Waiting for goal.")
-                rospy.sleep(1)
-            print("Current goal: ", self.goal)
-            
-            # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-            self.set_goal(self.goal)
-            # Send flag to state machine
-            self.result_pub(Bool(data=self.pose_reached())) 
-            # Calculate MPC command
-            command = self.get_robot_command()
-            # Publish ROS command to real robot
-            self.send_cmd(command)
-            #  draw_lines() in Issacgym env
-            self.draw_lines() 
+        # if self.activate_control:
+        while (self.goal is None):
+            print("Waiting for goal.")
+            rospy.sleep(1)
+        print("Current goal: ", self.goal)
+        
+        # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+        self.set_goal(self.goal)
+        # Send flag to state machine
+        self.result_pub.publish(Bool(data=self.pose_reached())) 
+        # Calculate MPC command
+        command = self.get_robot_command()
+        # Publish ROS command to real robot
+        self.send_cmd(command)
+        #  draw_lines() in Issacgym env
+        self.draw_lines() 
         
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)

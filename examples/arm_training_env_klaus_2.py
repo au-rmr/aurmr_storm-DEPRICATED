@@ -136,23 +136,24 @@ class Tahoma(IsaacGymEnv):
         self.gym_instance.step()
         self.t_step += self.sim_dt
         self.synchronize()
-
-        if self.activate_control:
-            while (self.goal is None):
-                print("Waiting for goal.")
-                rospy.sleep(1)
-            print("Current goal: ", self.goal)
-            
-            # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-            self.set_goal(self.goal)
+        while (self.goal is None):
+            print("Waiting for goal.")
+            rospy.sleep(1)
+        #print("Current goal: ", self.goal)
+        # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+        # Calculate MPC command
+        command = self.get_robot_command()
+        self.set_goal(self.goal)
+        if self.activate_control: 
             # Send flag to state machine
-            self.result_pub(Bool(data=self.pose_reached())) 
-            # Calculate MPC command
-            command = self.get_robot_command()
+            self.result_pub.publish(Bool(data=self.pose_reached())) 
             # Publish ROS command to real robot
             self.send_cmd(command)
             #  draw_lines() in Issacgym env
-            self.draw_lines() 
+            self.draw_lines()
+        else:
+            # Need to refrshe the topic otherwise the robot will keep execute the last one even.
+            self.send_cmd([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
         
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)
@@ -193,7 +194,7 @@ class Tahoma(IsaacGymEnv):
         # Synchronize real robot and sim robot
         # Get position from ROS subscruber /joint_states
         if self.position:
-            print("Current position: ", self.position)
+            #print("Current position: ", self.position)
             # current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
             tmp_position = copy.deepcopy(self.position)
             tmp_velocity = copy.deepcopy(self.velocity)
@@ -255,7 +256,7 @@ class Tahoma(IsaacGymEnv):
 
         test = np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z]))
         print("Distance between current pose and goal: ", test)
-        return (test < 0.002)
+        return (test < 0.01)
         #return np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z])) < 0.002# or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))<0.1)
 
     # calculate the command by MPC(velocity or position control)

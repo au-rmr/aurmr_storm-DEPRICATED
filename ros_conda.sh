@@ -1,4 +1,4 @@
-conda activate aurmr_storm3
+conda activate storm_kit_test
 export PKG_CONFIG_PATH=/home/aurmr/workspaces/paolo_ws/devel/lib/pkgconfig:/home/aurmr/workspaces/jack_ws/devel/lib/pkgconfig:/home/aurmr/workspaces/nick_ws/devel/lib/pkgconfig:/opt/ros/noetic/lib/pkgconfig:/opt/ros/noetic/lib/x86_64-linux-gnu/pkgconfig
 export ROS_PYTHON_VERSION=3
 export ROS_OS_OVERRIDE=robostack:linux

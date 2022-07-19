@@ -43,8 +43,8 @@ import threading
 
 REAL_STATE = '/joint_states'
 GOAL_POSE = '/goal_pose'
-VEL_COMMAND = '/joint_group_vel_controller/command'
-# VEL_COMMAND = '/joint_group_pos_controller/command'
+# VEL_COMMAND = '/joint_group_vel_controller/command'
+VEL_COMMAND = '/joint_group_pos_controller/command'
 STROM_RESULT = '/storm_info/result'
 ACTIVATE_CONTROL = '/activate_control'
 
@@ -263,7 +263,8 @@ class Tahoma(IsaacGymEnv):
     def get_robot_command(self):
         # current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
         command = self.mpc_control.get_command(self.t_step, self.current_robot_state, control_dt=self.sim_dt, WAIT=False)
-        qd_des = copy.deepcopy(command['velocity'])
+        # qd_des = copy.deepcopy(command['velocity'])
+        qd_des = copy.deepcopy(command['position'])
         # print(q_des)
         # self.robot_sim.command_robot_position(q_des, self.env_ptr, self.robot_ptr)
         return qd_des

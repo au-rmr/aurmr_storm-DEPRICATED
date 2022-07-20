@@ -43,10 +43,16 @@ import threading
 
 REAL_STATE = '/joint_states'
 GOAL_POSE = '/goal_pose'
-# VEL_COMMAND = '/joint_group_vel_controller/command'
-VEL_COMMAND = '/joint_group_pos_controller/command'
 STROM_RESULT = '/storm_info/result'
 ACTIVATE_CONTROL = '/activate_control'
+
+
+# Note for substiting position control
+# change the topic(as below)
+# change MPC output(in the get_robot_command())
+# in step() stop publishing all zeros when using postion control
+VEL_COMMAND = '/joint_group_pos_controller/command'
+# VEL_COMMAND = '/joint_group_vel_controller/command'
 
 class IsaacGymEnv():
     def __init__(self, args, gym_instance):
@@ -152,8 +158,9 @@ class Tahoma(IsaacGymEnv):
             #  draw_lines() in Issacgym env
             self.draw_lines()
         else:
+            pass
             # Need to refrshe the topic otherwise the robot will keep execute the last one even.
-            self.send_cmd([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
+            # self.send_cmd([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
         
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)

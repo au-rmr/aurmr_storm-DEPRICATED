@@ -48,7 +48,7 @@ model:
   #control_freq: 10
   #sim_freq: 100
   ee_link_name: "wrist_3_link"
-  init_state: [0., 0., 0., 0., 0., 0.]
+  init_state: [0.0801730751991272, -1.6045156917967738, -1.5869851112365723, 0.06304375707592769, -0.07321101823915654, 3.3991031646728516]
   link_names: ['shoulder_link','upper_arm_link','forearm_link','wrist_1_link','wrist_2_link','wrist_3_link']
   #link_names: ['panda_link6']
   vel_scale: 1.0

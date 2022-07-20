@@ -2,8 +2,8 @@ from storm_kit.gym.core import Gym
 import argparse
 import arm_training_env_klaus
 from storm_kit.util_file import get_configs_path, get_gym_configs_path, join_path, load_yaml, get_assets_path
+
 import rospy
-from std_msgs.msg import String
 
 def run_env(env):
     while True:
@@ -32,7 +32,7 @@ def run_env(env):
 
 
 if __name__ == '__main__':
-
+    
     # instantiate empty gym:
     parser = argparse.ArgumentParser(description='pass args')
     parser.add_argument('--robot', type=str, default='ur16e', help='Robot to spawn')
@@ -46,7 +46,10 @@ if __name__ == '__main__':
     sim_params['headless'] = args.headless
     #sim_params['up_axis'] = gymapi.UP_AXIS_Z
     gym_instance = Gym(**sim_params)
-    rospy.init_node('talker_test', anonymous=True)
+    
+    # For ROS publisher
+    rospy.init_node('Joint_talker_test', anonymous=True)
+
     env = arm_training_env_klaus.TahomaEnv(args, gym_instance)
 
     run_env(env)

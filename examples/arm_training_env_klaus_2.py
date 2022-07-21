@@ -48,11 +48,12 @@ ACTIVATE_CONTROL = '/activate_control'
 
 
 # Note for substiting position control
-# change the topic(as below)
+
 # change MPC output(in the get_robot_command())
 # in step() stop publishing all zeros when using postion control
-VEL_COMMAND = '/joint_group_pos_controller/command'
-# VEL_COMMAND = '/joint_group_vel_controller/command'
+# change the topic(two below)
+MPC_COMMAND = '/joint_group_pos_controller/command'
+# MPC_COMMAND = '/joint_group_vel_controller/command'
 
 class IsaacGymEnv():
     def __init__(self, args, gym_instance):
@@ -134,7 +135,7 @@ class Tahoma(IsaacGymEnv):
         rospy.Subscriber(REAL_STATE, JointState, self.callback_JS)
         rospy.Subscriber(GOAL_POSE, PoseStamped, self.callback_GP)
         rospy.Subscriber(ACTIVATE_CONTROL, Bool, self.callback_AC)
-        self.cmd_pub = rospy.Publisher(VEL_COMMAND, Float64MultiArray, queue_size=1)
+        self.cmd_pub = rospy.Publisher(MPC_COMMAND, Float64MultiArray, queue_size=1)
         self.result_pub = rospy.Publisher(STROM_RESULT, Bool, queue_size=1)
         
 

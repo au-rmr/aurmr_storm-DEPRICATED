@@ -194,7 +194,7 @@ class World(object):
         pose.r = gymapi.Quat(table_pose[3], table_pose[4], table_pose[5], table_pose[6])
         table_asset = self.gym.create_box(self.sim, table_dims.x, table_dims.y, table_dims.z,
                                           asset_options)
-
+        pose = self.robot_pose.inverse()*pose
         table_pose = self.robot_pose * pose
         table_handle = self.gym.create_actor(self.env_ptr, table_asset, table_pose,'table',
                                              2,2,self.ENV_SEG_LABEL)

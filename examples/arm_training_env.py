@@ -121,9 +121,13 @@ class TahomaEnv(IsaacGymEnv):
             sphere_handle = self.world_instance[i].sphere_handles[0] 
             self.obj_body_handle.append(self.gym_instance.gym.get_actor_rigid_body_handle(self.env_ptr[i], sphere_handle, 0))
 
-    def reset():
-        array = randomize()
-        self.gym_instance.set_tensor(array)
+    def reset(self):
+        self.randomize()
+        self.gym_instance.set_tensor()
+
+    def randomize(self):
+        root_positions = self.gym_instance.saved_root_tensor[1, 0:3]
+        root_positions[0] = 1
 
     def step(self, action):
         self.gym_instance.step()

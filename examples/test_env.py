@@ -15,7 +15,7 @@ def run_env(env):
     
     env.close()
 
-        # state = env.reset()
+        # state = env.resetnvidia()
         # if render:
         #     env.render()
 
@@ -39,6 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--headless', action='store_true', default=False, help='headless gym')
     parser.add_argument('--control_space', type=str, default='acc', help='Robot to spawn')
     parser.add_argument('--camera_pose', nargs='+', type=float, default=[2.0, 0.0, 0.0, 0.707,0.0,0.0,-0.707], help='Where to spawn camera')
+    parser.add_argument('--num_env', type=int, default='1', help='Number of environments')
     args = parser.parse_args()
     
     sim_params = load_yaml(join_path(get_gym_configs_path(),'physx.yml'))

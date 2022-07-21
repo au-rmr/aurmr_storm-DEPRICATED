@@ -74,6 +74,13 @@ class ControlProcess(object):
         self.controller = controller
         self.control_dt = control_dt
         self.prev_mpc_tstep = 0.0
+
+        self.start_time1 = 0
+        self.wait_for_command = 0
+        self.start_time2 = 0
+        self.truncate_time = 0
+        self.integrate_time = 0
+
     def predict_next_state(self, t_step, curr_state):
         # predict next state
         # given current t_step, integrate to t_step+mpc_dt
@@ -125,6 +132,7 @@ class ControlProcess(object):
         return act, command_tstep_buffer, self.command[1], command_buffer
 
     def get_command(self, t_step, curr_state, debug=False, control_dt=0.01):
+        start_time1 = time.time()
         if(self.opt_queue.empty()):# and self.command is None):
             # integrate current state to mpc_dt:
             #
@@ -146,12 +154,14 @@ class ControlProcess(object):
             
             self.opt_queue.put(opt_data)
             self.params = None
-
+        self.start_time1 += time.time() - start_time1
+        wait_for_command1 = time.time()
         # wait for first command
         while(self.command is None and self.result_queue.empty()):
             time.sleep(0.01)
-
+        self.wait_for_command += time.time() - wait_for_command1
         
+        start_time2 = time.time()
         if(not self.result_queue.empty()):# and self.command is None):
             command_data = self.result_queue.get()
             self.command_tstep = self.traj_tstep + command_data['t_step']
@@ -163,18 +173,20 @@ class ControlProcess(object):
             self.top_values = command_data['top_values']
             self.top_trajs = command_data['top_trajs']
             self.top_idx = command_data['top_idx']
-            
+        self.start_time2 += time.time() - start_time2
             
             
         # send to process
 
         if(self.command is None):
             raise ValueError
-
+        truncate_time = time.time()
         command_buffer, command_tstep_buffer = self.truncate_command(self.command[0], t_step, self.command_tstep)
-        
+        self.truncate_time += time.time() - truncate_time
         #print(command_buffer.shape)
+        integrate_time = time.time()
         act = self.controller.rollout_fn.dynamics_model.integrate_action_step(command_buffer[0], self.control_dt)
+        self.integrate_time += time.time() - integrate_time
         return act, command_tstep_buffer, self.command[1], command_buffer
     
     def truncate_command(self, command, trunc_tstep, command_tstep):

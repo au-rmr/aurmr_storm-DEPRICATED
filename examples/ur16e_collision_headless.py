@@ -386,7 +386,6 @@ def mpc_robot_interactive(args, gym_instance):
 
                 # endTimeStep = time.time()
                 # print("Elapsed time: " + str(endTimeStep- startTimeStep))
-                
             except KeyboardInterrupt:
                 print('Closing')
                 done = True
@@ -395,6 +394,7 @@ def mpc_robot_interactive(args, gym_instance):
         print("Elapsed time: " + str(end-start))
         # print(mpc_control.controller.rollout_fn.rollout_time)
         # print(mpc_control.controller.rollout_fn.cost_time)
+        
         tmp = mpc_control.controller.rollout_fn.get_time()
         print("Dynamics Time: ", tmp[0])
         print("Cost Time: ", tmp[1])

@@ -34,6 +34,9 @@ from ...mpc.model.integration_utils import build_fd_matrix
 from ...mpc.rollout.rollout_base import RolloutBase
 from ..cost.robot_self_collision_cost import RobotSelfCollisionCost
 
+from cprint import *
+import time
+
 class ArmBase(RolloutBase):
     """
     This rollout function is for reaching a cartesian pose for a robot
@@ -136,6 +139,14 @@ class ArmBase(RolloutBase):
 
         self.link_pos_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3), **self.tensor_args)
         self.link_rot_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3, 3), **self.tensor_args)
+
+        self.rollout_time = 0
+        self.cost_time = 0
+        self.total_time = 0
+
+    def get_time(self):
+        return self.rollout_time, self.cost_time
+
     def cost_fn(self, state_dict, action_batch, no_coll=False, horizon_cost=True):
         
         ee_pos_batch, ee_rot_batch = state_dict['ee_pos_seq'], state_dict['ee_rot_seq']
@@ -224,13 +235,17 @@ class ArmBase(RolloutBase):
         #print("computing rollout")
         #print(act_seq)
         #print('step...')
+        
+        rollout_time = time.time()
         with profiler.record_function("robot_model"):
             state_dict = self.dynamics_model.rollout_open_loop(start_state, act_seq)
+        self.rollout_time += time.time() - rollout_time
         
-        
+        cost_time = time.time()
         #link_pos_seq, link_rot_seq = self.dynamics_model.get_link_poses()
         with profiler.record_function("cost_fns"):
             cost_seq = self.cost_fn(state_dict, act_seq)
+        self.cost_time += time.time() - cost_time
 
         sim_trajs = dict(
             actions=act_seq,#.clone(),
@@ -241,6 +256,12 @@ class ArmBase(RolloutBase):
             rollout_time=0.0
         )
         
+        # self.total_time += self.dynamics_model.dt
+        # print(self.total_time)
+        # if self.total_time > 6.3:
+        tmp = self.get_time()
+        cprint.info(self.rollout_time)
+        cprint.warn(self.cost_time)
         return sim_trajs
 
     def update_params(self, retract_state=None):

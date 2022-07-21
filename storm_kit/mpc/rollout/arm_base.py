@@ -23,6 +23,8 @@
 import torch
 import torch.autograd.profiler as profiler
 
+import time
+
 from ..cost import DistCost, PoseCost, ProjectedDistCost, JacobianCost, ZeroCost, EEVelCost, StopCost, FiniteDifferenceCost
 from ..cost.bound_cost import BoundCost
 from ..cost.manipulability_cost import ManipulabilityCost
@@ -136,6 +138,10 @@ class ArmBase(RolloutBase):
 
         self.link_pos_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3), **self.tensor_args)
         self.link_rot_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3, 3), **self.tensor_args)
+    
+        self.dynamics_time = None
+        self.cost_time = None
+    
     def cost_fn(self, state_dict, action_batch, no_coll=False, horizon_cost=True):
         
         ee_pos_batch, ee_rot_batch = state_dict['ee_pos_seq'], state_dict['ee_rot_seq']
@@ -224,14 +230,16 @@ class ArmBase(RolloutBase):
         #print("computing rollout")
         #print(act_seq)
         #print('step...')
+        dynamics_start_time = time.time()
         with profiler.record_function("robot_model"):
             state_dict = self.dynamics_model.rollout_open_loop(start_state, act_seq)
-        
+        self.dynamics_time += time.time() - dynamics_start_time
         
         #link_pos_seq, link_rot_seq = self.dynamics_model.get_link_poses()
+        cost_start_time = time.time()
         with profiler.record_function("cost_fns"):
             cost_seq = self.cost_fn(state_dict, act_seq)
-
+        self.cost_time += time.time() - cost_start_time
         sim_trajs = dict(
             actions=act_seq,#.clone(),
             costs=cost_seq,#clone(),

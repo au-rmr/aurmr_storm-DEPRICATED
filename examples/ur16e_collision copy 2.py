@@ -51,7 +51,7 @@ import numpy as np
 import numpy.typing as npt
 from quaternion import quaternion, from_rotation_vector, from_rotation_matrix
 import matplotlib.pyplot as plt
-from cprint import *
+# from cprint import *
 
 from quaternion import from_euler_angles, as_float_array, as_rotation_matrix, from_float_array, as_quat_array
 
@@ -90,9 +90,10 @@ def mpc_robot_interactive(args, gym_instance):
     else:
         device = 'cpu'
     sim_params['collision_model'] = None
+    gym_instance._create_env()
     # create robot simulation:
     robot_sim = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
-    robot_sim2 = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
+    
     
     # create gym environment:
     robot_pose = sim_params['robot_pose']
@@ -279,6 +280,7 @@ def mpc_robot_interactive(args, gym_instance):
 
     # SECOND ENV
     gym_instance._create_env()
+    robot_sim2 = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
     env_ptr2 = gym_instance.env_list[1]
     robot_ptr2 = robot_sim2.spawn_robot(env_ptr2, robot_pose, coll_id=2)
     # get pose
@@ -337,12 +339,14 @@ def mpc_robot_interactive(args, gym_instance):
     gym_instance.get_tensor(robot_ptr)
 
     for index in range(3):
-        cprint.info(index)
-        for jndex in range(750):
-            print(jndex)    
+        # cprint.info(index)
+        start = time.time()
+        for jndex in range(250):
+            #print(jndex)    
+            startTimeStep = time.time()
             try:
                 gym_instance.step()
-                # print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
+                #print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
                 if(vis_ee_target):
                     pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
                     pose = copy.deepcopy(w_T_r.inverse() * pose)
@@ -441,8 +445,7 @@ def mpc_robot_interactive(args, gym_instance):
 
                 #######
                 current_robot_state2 = copy.deepcopy(robot_sim2.get_state(env_ptr2, robot_ptr2))
-                print('1 ', current_robot_state)
-                print('2 ', current_robot_state2)
+          
                 
                 command2 = mpc_control2.get_command(t_step, current_robot_state2, control_dt=sim_dt, WAIT=False)
 
@@ -480,14 +483,16 @@ def mpc_robot_interactive(args, gym_instance):
                 
                 i += 1
 
-                
+                endTimeStep = time.time()
+                print("Elapsed time: " + str(endTimeStep- startTimeStep))
 
                 
             except KeyboardInterrupt:
                 print('Closing')
                 done = True
                 break
-        
+        end = time.time()
+        print("Elapsed time: " + str(end - start))
         # robot_sim.set_robot_state([0.12, -2.0, 1.35, 0.58, 1.67, 1.74], np.zeros(6), env_ptr, robot_ptr)
         gym_instance.set_tensor(robot_ptr)
         

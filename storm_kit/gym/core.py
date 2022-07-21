@@ -43,7 +43,7 @@ MEDIUM_LIGHTING = gymapi.Vec3(0.8, 0.8, 0.8)
 BRIGHT_LIGHTING = gymapi.Vec3(1, 1, 1)
 
 class Gym(object):
-    def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=2, headless=False, **kwargs):
+    def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1, headless=False, **kwargs):
 
         if(physics_engine=='physx'):
             physics_engine = gymapi.SIM_PHYSX
@@ -72,8 +72,8 @@ class Gym(object):
 
         self.env_list = []#None
         self.viewer = None
-        # self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
-        self._create_env()
+        self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
+        # self._create_env()
         if(not headless):
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
             cam_pos = gymapi.Vec3(-1.5, 1.8, -1.2)
@@ -129,7 +129,7 @@ class Gym(object):
         self.gym.set_dof_state_tensor(self.sim, gymtorch.unwrap_tensor(self.saved_root_dofs_tensor))
         # self.gym.refresh_actor_root_state_tensor(self.sim)
         # self.gym.refresh_dof_state_tensor(self.sim)
-        self.gym.set_actor_dof_position_targets(self.env_list[0], actor_handle, self.dof_targets_tensor)
+        #### Resetting actor Damping and ... self.gym.set_actor_dof_position_targets(self.env_list[0], actor_handle, self.dof_targets_tensor)
         # self.gym.set_dof_position_target_tensor(self.sim,gymtorch.unwrap_tensor(torch.tensor(self.dof_targets_tensor, dtype=torch.float32))) 
         # actor_indx = gymtorch.unwrap_tensor(torch.tensor([0], dtype=torch.float32))
         # buffer = gymtorch.unwrap_tensor(torch.tensor(self.dof_targets_tensor, dtype=torch.float32))
@@ -231,8 +231,8 @@ class World(object):
                 if 'fix' in cube[obj]: fix = cube[obj]['fix']
                 self.add_table(dims, pose, color=color)
         
-        # self.spawn_collision_object("urdf/stand/stand.urdf")
-        # self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
+        self.spawn_collision_object("urdf/stand/stand.urdf")
+        self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
 
     def add_sphere(self, radius, sphere_pose, fix=True, color=[1.0,0.0,0.0]):
         asset_options = gymapi.AssetOptions()

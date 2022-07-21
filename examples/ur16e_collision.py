@@ -51,7 +51,6 @@ import numpy as np
 import numpy.typing as npt
 from quaternion import quaternion, from_rotation_vector, from_rotation_matrix
 import matplotlib.pyplot as plt
-from cprint import *
 
 from quaternion import from_euler_angles, as_float_array, as_rotation_matrix, from_float_array, as_quat_array
 
@@ -90,9 +89,9 @@ def mpc_robot_interactive(args, gym_instance):
     else:
         device = 'cpu'
     sim_params['collision_model'] = None
+    # gym_instance._create_env()
     # create robot simulation:
     robot_sim = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
-    robot_sim2 = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
     
     # create gym environment:
     robot_pose = sim_params['robot_pose']
@@ -280,13 +279,7 @@ def mpc_robot_interactive(args, gym_instance):
     gym_instance.get_tensor(robot_ptr)
 
     for index in range(1):
-        cprint.info(index)
-        for jndex in range(10000):
-            print(jndex)    
-            try:
-                gym_instance.step()
-                print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
-                if(vis_ee_target):
+        if(vis_ee_target):
                     pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
                     pose = copy.deepcopy(w_T_r.inverse() * pose)
 
@@ -301,6 +294,28 @@ def mpc_robot_interactive(args, gym_instance):
 
                         mpc_control.update_params(goal_ee_pos=g_pos,
                                                 goal_ee_quat=g_q)
+        start = time.time()
+        for jndex in range(1000):
+            startTimeStep = time.time()
+            #print(jndex)    
+            try:
+                gym_instance.step()
+                #print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
+                # if(vis_ee_target):
+                #     pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
+                #     pose = copy.deepcopy(w_T_r.inverse() * pose)
+
+                #     if(np.linalg.norm(g_pos - np.ravel([pose.p.x, pose.p.y, pose.p.z])) > 0.00001 or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))>0.0)):
+                #         g_pos[0] = pose.p.x
+                #         g_pos[1] = pose.p.y
+                #         g_pos[2] = pose.p.z
+                #         g_q[1] = pose.r.x
+                #         g_q[2] = pose.r.y
+                #         g_q[3] = pose.r.z
+                #         g_q[0] = pose.r.w
+
+                #         mpc_control.update_params(goal_ee_pos=g_pos,
+                #                                 goal_ee_quat=g_q)
                 
 
                 t_step += sim_dt
@@ -310,29 +325,29 @@ def mpc_robot_interactive(args, gym_instance):
                 
                 command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
 
-                filtered_state_mpc = current_robot_state #mpc_control.current_state
-                curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
+                # filtered_state_mpc = current_robot_state #mpc_control.current_state
+                # curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
 
-                curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
+                # curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
                 # get position command:
                 q_des = copy.deepcopy(command['position'])
                 #qd_des = copy.deepcopy(command['velocity']) #* 0.5
                 #qdd_des = copy.deepcopy(command['acceleration'])
                 
-                ee_error = mpc_control.get_current_error(filtered_state_mpc)
+                # ee_error = mpc_control.get_current_error(filtered_state_mpc)
                 
-                pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
+                # pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
                 
                 # get current pose:
-                e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
-                e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
-                ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
-                ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
-                if(pose_reached()): print('##############################################REACHED##################')
-                ee_pose = copy.deepcopy(w_T_r) * copy.deepcopy(ee_pose)
+                # e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
+                # e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
+                # ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
+                # ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
+                # if(pose_reached()): print('##############################################REACHED##################')
+                # ee_pose = copy.deepcopy(w_T_r) * copy.deepcopy(ee_pose)
                 
-                if(vis_ee_target):
-                    gym.set_rigid_transform(env_ptr, ee_body_handle, copy.deepcopy(ee_pose))
+                # if(vis_ee_target):
+                #     gym.set_rigid_transform(env_ptr, ee_body_handle, copy.deepcopy(ee_pose))
 
                 '''print(["{:.3f}".format(x) for x in ee_error], "{:.3f}".format(mpc_control.opt_dt),
                     "{:.3f}".format(mpc_control.mpc_dt))'''
@@ -340,47 +355,55 @@ def mpc_robot_interactive(args, gym_instance):
                 #num += 0.1
                 # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
                 #q_des = np.array([num, 0.0, 0.0, 0.0, 0.0, 0.0])
+                # print(q_des)
                 robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
                 #current_state = command
                 #move_robot()
                             
-                gym_instance.clear_lines()
-                top_trajs = mpc_control.top_trajs.cpu().float()#.numpy()
-                n_p, n_t = top_trajs.shape[0], top_trajs.shape[1]
-                w_pts = w_robot_coord.transform_point(top_trajs.view(n_p * n_t, 3)).view(n_p, n_t, 3)
+                # gym_instance.clear_lines()
+                # top_trajs = mpc_control.top_trajs.cpu().float()#.numpy()
+                # n_p, n_t = top_trajs.shape[0], top_trajs.shape[1]
+                # w_pts = w_robot_coord.transform_point(top_trajs.view(n_p * n_t, 3)).view(n_p, n_t, 3)
 
 
-                top_trajs = w_pts.cpu().numpy()
-                color = np.array([0.0, 1.0, 0.0])
-                for k in range(top_trajs.shape[0]):
-                    pts = top_trajs[k,:,:]
-                    color[0] = float(k) / float(top_trajs.shape[0])
-                    color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
-                    gym_instance.draw_lines(pts, color=color)
+                # top_trajs = w_pts.cpu().numpy()
+                # color = np.array([0.0, 1.0, 0.0])
+                # for k in range(top_trajs.shape[0]):
+                #     pts = top_trajs[k,:,:]
+                #     color[0] = float(k) / float(top_trajs.shape[0])
+                #     color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
+                #     gym_instance.draw_lines(pts, color=color)
 
-                # PT
-                props = gym.get_actor_dof_properties(env_ptr, robot_ptr)
+                # # PT
+                # props = gym.get_actor_dof_properties(env_ptr, robot_ptr)
                 
-                pts = np.array([[0.0, 0.0, 0.0],[ee_pose.p.x, ee_pose.p.y, ee_pose.p.z]])
-                gym_instance.draw_lines(pts, color=[1.0,0.0,1.0])
-                gym_instance.draw_lines(ptsX, color=[0.5,0.0,0.0])
-                gym_instance.draw_lines(ptsY, color=[0.0,0.5,0.0])
-                gym_instance.draw_lines(ptsZ, color=[0.0,0.0,0.5])
+                # pts = np.array([[0.0, 0.0, 0.0],[ee_pose.p.x, ee_pose.p.y, ee_pose.p.z]])
+                # gym_instance.draw_lines(pts, color=[1.0,0.0,1.0])
+                # gym_instance.draw_lines(ptsX, color=[0.5,0.0,0.0])
+                # gym_instance.draw_lines(ptsY, color=[0.0,0.5,0.0])
+                # gym_instance.draw_lines(ptsZ, color=[0.0,0.0,0.5])
                 
-                i += 1
+                # i += 1
 
-                
-
+                # endTimeStep = time.time()
+                # print("Elapsed time: " + str(endTimeStep- startTimeStep))
                 
             except KeyboardInterrupt:
                 print('Closing')
                 done = True
                 break
-        
+        end = time.time()
+        print("Elapsed time: " + str(end-start))
         # robot_sim.set_robot_state([0.12, -2.0, 1.35, 0.58, 1.67, 1.74], np.zeros(6), env_ptr, robot_ptr)
-        gym_instance.set_tensor(robot_ptr)
+        # gym_instance.set_tensor(robot_ptr)
         
-
+    print(mpc_control.control_process.start_time1)
+    print(mpc_control.control_process.wait_for_command)
+    print(mpc_control.control_process.start_time2)
+    print(mpc_control.control_process.truncate_time)
+    print(mpc_control.control_process.integrate_time)
+    # print("Dynamics Time: ", mpc_control.controller.rollout_fn.dynamics_time)
+    # print("Cost Time: ", mpc_control.controller.rollout_fn.cost_time)
     mpc_control.close()
     return 1 
     
@@ -396,7 +419,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     sim_params = load_yaml(join_path(get_gym_configs_path(),'physx.yml'))
-    sim_params['headless'] = args.headless
+    # sim_params['headless'] = args.headless
     #sim_params['up_axis'] = gymapi.UP_AXIS_Z
     gym_instance = Gym(**sim_params)
     

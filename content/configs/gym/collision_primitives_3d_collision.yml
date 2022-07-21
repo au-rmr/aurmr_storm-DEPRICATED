@@ -24,7 +24,7 @@ world_model:
   coll_objs:
     sphere:
       sphere1:
-        radius: 0.0 #5 # meters
+        radius: 0.1 #5 # meters
         position: [.6, .4, 0]
         fix: False
     # cube:

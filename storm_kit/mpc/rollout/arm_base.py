@@ -141,6 +141,9 @@ class ArmBase(RolloutBase):
     
         self.dynamics_time = None
         self.cost_time = None
+
+    def get_time(self):
+        return self.dynamics_time, self.cost_time
     
     def cost_fn(self, state_dict, action_batch, no_coll=False, horizon_cost=True):
         

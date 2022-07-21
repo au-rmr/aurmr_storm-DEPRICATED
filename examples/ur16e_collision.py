@@ -219,7 +219,6 @@ def mpc_robot_interactive(args, gym_instance):
     q_des = None
     qd_des = None
     t_step = gym_instance.get_sim_time()
-
     g_pos = np.ravel(mpc_control.controller.rollout_fn.goal_ee_pos.cpu().numpy())
     g_q = np.ravel(mpc_control.controller.rollout_fn.goal_ee_quat.cpu().numpy())
 
@@ -295,7 +294,7 @@ def mpc_robot_interactive(args, gym_instance):
                         mpc_control.update_params(goal_ee_pos=g_pos,
                                                 goal_ee_quat=g_q)
         start = time.time()
-        for jndex in range(1000):
+        for jndex in range(100):
             startTimeStep = time.time()
             #print(jndex)    
             try:
@@ -325,10 +324,10 @@ def mpc_robot_interactive(args, gym_instance):
                 
                 command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
 
-                # filtered_state_mpc = current_robot_state #mpc_control.current_state
-                # curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
+                filtered_state_mpc = current_robot_state #mpc_control.current_state
+                curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
 
-                # curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
+                curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
                 # get position command:
                 q_des = copy.deepcopy(command['position'])
                 #qd_des = copy.deepcopy(command['velocity']) #* 0.5
@@ -336,7 +335,7 @@ def mpc_robot_interactive(args, gym_instance):
                 
                 # ee_error = mpc_control.get_current_error(filtered_state_mpc)
                 
-                # pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
+                pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
                 
                 # get current pose:
                 # e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
@@ -394,16 +393,24 @@ def mpc_robot_interactive(args, gym_instance):
                 break
         end = time.time()
         print("Elapsed time: " + str(end-start))
+        # print(mpc_control.controller.rollout_fn.rollout_time)
+        # print(mpc_control.controller.rollout_fn.cost_time)
+        tmp = mpc_control.controller.rollout_fn.get_time()
+        print("Dynamics Time: ", tmp[0])
+        print("Cost Time: ", tmp[1])
+
         # robot_sim.set_robot_state([0.12, -2.0, 1.35, 0.58, 1.67, 1.74], np.zeros(6), env_ptr, robot_ptr)
         # gym_instance.set_tensor(robot_ptr)
         
-    print(mpc_control.control_process.start_time1)
-    print(mpc_control.control_process.wait_for_command)
-    print(mpc_control.control_process.start_time2)
-    print(mpc_control.control_process.truncate_time)
-    print(mpc_control.control_process.integrate_time)
+    # print(mpc_control.control_process.start_time1)
+    # print(mpc_control.control_process.wait_for_command)
+    # print(mpc_control.control_process.start_time2)
+    # print(mpc_control.control_process.truncate_time)
+    # print(mpc_control.control_process.integrate_time)
+
     # print("Dynamics Time: ", mpc_control.controller.rollout_fn.dynamics_time)
     # print("Cost Time: ", mpc_control.controller.rollout_fn.cost_time)
+
     mpc_control.close()
     return 1 
     

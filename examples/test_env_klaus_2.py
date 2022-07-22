@@ -1,6 +1,6 @@
 from storm_kit.gym.core import Gym
 import argparse
-import arm_training_env_klaus_2
+import arm_training_env_klaus
 from storm_kit.util_file import get_configs_path, get_gym_configs_path, join_path, load_yaml, get_assets_path
 import rospy
 
@@ -47,5 +47,5 @@ if __name__ == '__main__':
     gym_instance = Gym(**sim_params)
     
     rospy.init_node('storm_robot', anonymous=True)
-    robot = arm_training_env_klaus_2.Tahoma(args, gym_instance)
+    robot = arm_training_env_klaus.Tahoma(args, gym_instance)
     run_env(robot)

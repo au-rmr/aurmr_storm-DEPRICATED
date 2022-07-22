@@ -44,9 +44,7 @@ import threading
 REAL_STATE = '/joint_states'
 GOAL_POSE = '/goal_pose'
 VEL_COMMAND = '/joint_group_vel_controller/command'
-# VEL_COMMAND = '/joint_group_pos_controller/command'
 STROM_RESULT = '/storm_info/result'
-ACTIVATE_CONTROL = '/activate_control'
 
 class IsaacGymEnv():
     def __init__(self, args, gym_instance):
@@ -118,7 +116,6 @@ class Tahoma(IsaacGymEnv):
         super().__init__(args, gym_instance)
         self.ee_pose = gymapi.Transform()
 
-        self.activate_control = False
         self.position = None
         self.velocity = None
         self.goal = None 
@@ -126,8 +123,7 @@ class Tahoma(IsaacGymEnv):
         # , 'acceleration': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
         self.current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
         rospy.Subscriber(REAL_STATE, JointState, self.callback_JS)
-        rospy.Subscriber(GOAL_POSE, PoseStamped, self.callback_GP)
-        rospy.Subscriber(ACTIVATE_CONTROL, Bool, self.callback_AC)
+        rospy.Subscriber(GOAL_POSE, PoseStamped, self.callback_G)
         self.cmd_pub = rospy.Publisher(VEL_COMMAND, Float64MultiArray, queue_size=1)
         self.result_pub = rospy.Publisher(STROM_RESULT, Bool, queue_size=1)
         
@@ -135,46 +131,47 @@ class Tahoma(IsaacGymEnv):
     def step(self, action):
         self.gym_instance.step()
         self.t_step += self.sim_dt
+        pose_reached = self.pose_reached()
+        if (pose_reached):
+            result_tmp = Bool()
+            Bool.data = pose_reached
+            self.result_pub(result_tmp)
         self.synchronize()
 
-        if self.activate_control:
-            while (self.goal is None):
-                print("Waiting for goal.")
-                rospy.sleep(1)
-            print("Current goal: ", self.goal)
-            
-            # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-            self.set_goal(self.goal)
-            # Send flag to state machine
-            self.result_pub(Bool(data=self.pose_reached())) 
-            # Calculate MPC command
-            command = self.get_robot_command()
-            # Publish ROS command to real robot
-            self.send_cmd(command)
-            #  draw_lines() in Issacgym env
-            self.draw_lines() 
         
+        while (self.goal is None):
+            print("Waiting for goal.")
+            rospy.sleep(1)
+        print("Current goal: ", self.goal)
+
+        # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+        self.set_goal(self.goal)
+        
+        # Calculate MPC command
+        command = self.get_robot_command()
+        # Updates green mug/cup in simulation 
+        # self.move_mug()
+        # Publish ROS command to real robot
+        self.send_cmd(command)
+        #  draw_lines() in Issacgym env
+        self.draw_lines() 
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)
         # ob = self.get_obs()
         # return ob, reward, done, None
     
-    # callback got robot real states
+     
     def callback_JS(self, msg):
-        if len(msg.position) >= 6:
-            self.position = msg.position[:6]
-            self.velocity = msg.velocity[:6]
+        if len(msg.position) == 6:
+            self.position = msg.position
+            self.velocity = msg.velocity
 
-    # callback for goal setting from state machine(or from vision team)
-    def callback_GP(self, msg):
+    def callback_G(self, msg):
         p = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
         q = np.array([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
         self.goal = np.concatenate((p, q), axis=None)
-
-    def callback_AC(self, msg):
-        self.activate_control = msg.data
     
-    # sending command to the real robot
+
     def send_cmd(self, cmd):
         # ROS publish command   
                  
@@ -188,7 +185,7 @@ class Tahoma(IsaacGymEnv):
         command_msg.data = [cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5]]
         self.cmd_pub.publish(command_msg)
 
-    # synchronize gazebo sim env with real robot states
+
     def synchronize(self):
         # Synchronize real robot and sim robot
         # Get position from ROS subscruber /joint_states
@@ -213,11 +210,11 @@ class Tahoma(IsaacGymEnv):
             print("Doesn't have real robot status.")
         
      
-    # close MPC control
+
     def close(self):
         self.mpc_control.close()
 
-    # set the goal for MPC controller
+
     def set_goal(self, pose:np.ndarray):
         goal_pose = gymapi.Transform()
         goal_pose.p = gymapi.Vec3(pose[0], pose[1], pose[2]) 
@@ -254,11 +251,10 @@ class Tahoma(IsaacGymEnv):
         self.ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
 
         test = np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z]))
-        print("Distance between current pose and goal: ", test)
+        print(test)
         return (test < 0.002)
         #return np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z])) < 0.002# or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))<0.1)
 
-    # calculate the command by MPC(velocity or position control)
     def get_robot_command(self):
         # current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
         command = self.mpc_control.get_command(self.t_step, self.current_robot_state, control_dt=self.sim_dt, WAIT=False)
@@ -267,7 +263,6 @@ class Tahoma(IsaacGymEnv):
         # self.robot_sim.command_robot_position(q_des, self.env_ptr, self.robot_ptr)
         return qd_des
 
-    # draw predicted lines in issacgym sim env
     def draw_lines(self):
         self.gym_instance.clear_lines()
         w_robot_coord = CoordinateTransform(trans=self.w_T_robot[0:3,3].unsqueeze(0),
@@ -284,7 +279,6 @@ class Tahoma(IsaacGymEnv):
             color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
             self.gym_instance.draw_lines(pts, color=color)
 
-    # move the mug actors in issacgym in sim env
     def move_mug(self):
         pass
         # pose_state = self.mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
@@ -298,10 +292,7 @@ class Tahoma(IsaacGymEnv):
         # if(vis_ee_target):
         #     gym.set_rigid_transform(env_ptr, ee_body_handle, copy.deepcopy(ee_pose))
 
-
-
-
-# ================================================= Backup =================================================    
+    
     # def move_to_pose(self, goal_pose:np.ndarray)->bool:
     #     while not self.position_real:
     #         print('waiting for initial robot position')

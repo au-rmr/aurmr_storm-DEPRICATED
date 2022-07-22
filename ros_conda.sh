@@ -1,3 +1,4 @@
+conda activate aurmr_storm3
 export PKG_CONFIG_PATH=/home/aurmr/workspaces/paolo_ws/devel/lib/pkgconfig:/home/aurmr/workspaces/jack_ws/devel/lib/pkgconfig:/home/aurmr/workspaces/nick_ws/devel/lib/pkgconfig:/opt/ros/noetic/lib/pkgconfig:/opt/ros/noetic/lib/x86_64-linux-gnu/pkgconfig
 export ROS_PYTHON_VERSION=3
 export ROS_OS_OVERRIDE=robostack:linux
@@ -16,7 +17,7 @@ export ROS_ROOT=/opt/ros/noetic/share/ros
 export ROS_DISTRO=noetic
 ## Paolo Edit to catkin_make aurmr_sim
 # https://github.com/khancyr/ardupilot_gazebo/issues/14
-# export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/x86_64-linux-gnu/pkgconfig
-# # https://github.com/gazebosim/gz-cmake/issues/103
-# export INTERFACE_INCLUDE_DIRECTORIES=$INTERFACE_INCLUDE_DIRECTORIES:/usr/include/uuid
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/x86_64-linux-gnu/pkgconfig
+# https://github.com/gazebosim/gz-cmake/issues/103
+export INTERFACE_INCLUDE_DIRECTORIES=$INTERFACE_INCLUDE_DIRECTORIES:/usr/include/uuid
 

@@ -2,7 +2,7 @@
 robot: 'ur16e'
 collision_spheres:
     shoulder_link:
-        - "center": [0.0, 0.0, 0.0] #x, y, z
+        - "center": [0.0, 0.0, 0.0] #x, y, z -> relative to origin 
           "radius": 0.12
     upper_arm_link:
         - "center": [0.0, 0.0, 0.0]
@@ -32,3 +32,19 @@ collision_spheres:
     gripper_link:
         - "center": [0.0, 0.0, 0.4405]
           "radius": 0.0425 
+        - "center": [0.5885, 0.0, 0.4468]  # right bar 
+          "radius": 0.0875
+        - "center": [0.7635, 0.0, 0.878]
+          "radius": 0.0875
+        - "center": [-0.5885, 0.0, 0.4468]   # left bar - opposite
+          "radius": 0.0875
+        - "center": [-0.7635, 0.0, 0.878]
+          "radius": 0.0875
+        - "center": [0.440, 0.0, 1.255]  # right distal phalanx
+          "radius": 0.06
+        - "center": [0.610, 0.0, 1.007]
+          "radius": 0.112
+        - "center": [-0.440, 0.0, 1.255]       # left distal phalanx
+          "radius": 0.06
+        - "center": [-0.610, 0.0, 1.007]
+          "radius": 0.112

@@ -167,7 +167,7 @@
       <inertia ixx="0.0006481268240825001" ixy="0.0" ixz="0.0" iyy="0.0006481268240825001" iyz="0.0" izz="0.0009183374999999999"/>
     </inertial>
   </link>
-  <joint name="gripper_joint" type="revolute">
+  <joint name="gripper_joint" type="fixed">
     <parent link="wrist_3_link"/>
     <child link="gripper_link"/>
     <origin rpy="0 0 90" xyz="0 0 0"/>

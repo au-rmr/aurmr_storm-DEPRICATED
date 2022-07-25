@@ -26,6 +26,9 @@ world_model:
       sphere1:
         radius: 0.01 #5 # meters
         position: [0.4, 0.4, -0.4]
+      sphere2:
+        radius: 0.02
+        position: [0.0, 0.0, 0.6405]
     cube:
       # Stand Definition (generated from urdf_parse.py)
       # Right upright

@@ -127,6 +127,8 @@ class DifferentiableRobotModel(torch.nn.Module):
                 self._controlled_joints.append(i)
 
             self._bodies.append(body)
+            print("body name")
+            print(body.name)
             self._name_to_idx_map[body.name] = i
     def delete_lxml_objects(self):
         self._urdf_model = None

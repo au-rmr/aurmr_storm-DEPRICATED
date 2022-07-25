@@ -146,8 +146,8 @@ class Gym(object):
         if(not self.headless):
             self.gym.step_graphics(self.sim)
             self.gym.draw_viewer(self.viewer, self.sim, False)
-
-        # self.gym.sync_frame_time(self.sim)
+            self.gym.sync_frame_time(self.sim)
+            
         return True
     
     def _create_envs(self, num_envs, spacing=1.0, num_per_row=1):

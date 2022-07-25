@@ -140,12 +140,12 @@ class ArmBase(RolloutBase):
         self.link_pos_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3), **self.tensor_args)
         self.link_rot_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3, 3), **self.tensor_args)
 
-        self.rollout_time = 0
-        self.cost_time = 0
-        self.total_time = 0
+        # self.rollout_time = exp_params['time']
+        # self.cost_time = 0
+        # self.total_time = 0
 
-    def get_time(self):
-        return self.rollout_time, self.cost_time
+    # def get_time(self):
+    #     return self.rollout_time, self.cost_time
 
     def cost_fn(self, state_dict, action_batch, no_coll=False, horizon_cost=True):
         

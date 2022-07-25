@@ -43,7 +43,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     sim_params = load_yaml(join_path(get_gym_configs_path(),'physx.yml'))
-    sim_params['headless'] = args.headless
     #sim_params['up_axis'] = gymapi.UP_AXIS_Z
     gym_instance = Gym(**sim_params)
     

@@ -50,6 +50,12 @@ class ArmReacher(ArmBase):
         self.goal_cost = PoseCost(**exp_params['cost']['goal_pose'],
                                   tensor_args=self.tensor_args)
         
+        self.rollout_time = 0
+        self.cost_time = 0
+        self.total_time = 0
+
+    def get_time(self):
+        return self.rollout_time, self.cost_time
 
     def cost_fn(self, state_dict, action_batch, no_coll=False, horizon_cost=True, return_dist=False):
 

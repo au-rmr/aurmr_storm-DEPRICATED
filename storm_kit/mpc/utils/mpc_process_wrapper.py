@@ -256,7 +256,7 @@ def optimize_process(control_string, opt_queue, result_queue):
         top_idx = controller.top_idx
         top_values = controller.top_values
         top_trajs = controller.top_trajs
-        
+        # print('HI',controller.rollout_fn.get_time())
         command[0] = command[0].cpu().numpy()
         
         result = {'command':command, 't_step': opt_data['t_step'], 'mpc_dt': mpc_time,

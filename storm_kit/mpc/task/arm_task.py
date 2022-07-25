@@ -62,7 +62,6 @@ class ArmTask(BaseTask):
             exp_params = yaml.load(file, Loader=yaml.FullLoader)
         exp_params['robot_params'] = exp_params['model'] #robot_params
         
-        
         rollout_fn = self.get_rollout_fn(exp_params=exp_params, tensor_args=self.tensor_args, world_params=world_params)
         
         mppi_params = exp_params['mppi']

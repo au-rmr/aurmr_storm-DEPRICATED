@@ -51,7 +51,7 @@ class ArmBase(RolloutBase):
         robot_params = exp_params['robot_params']
         
         assets_path = get_assets_path()
-        #print('EE LINK',exp_params['model']['ee_link_name'])
+        print('EE LINK',exp_params['model']['ee_link_name'])
         # initialize dynamics model:
         dynamics_horizon = mppi_params['horizon'] * model_params['dt']
         #Create the dynamical system used for rollouts
@@ -192,7 +192,6 @@ class ArmBase(RolloutBase):
 
         if self.exp_params['cost']['ee_vel']['weight'] > 0:
             cost += self.ee_vel_cost.forward(state_batch, lin_jac_batch)
-
 
 
         if(not no_coll):

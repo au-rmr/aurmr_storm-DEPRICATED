@@ -133,12 +133,12 @@ class Gym(object):
     def draw_sphere(self, pose):
         sphere_rot = gymapi.Quat.from_euler_zyx(0.5 * math.pi, 0, 0)
         sphere_pose = gymapi.Transform(r=sphere_rot)
-        sphere_geom = gymutil.WireframeSphereGeometry(0.02, 12, 12, sphere_pose, color=(1, 1, 0))
+        sphere_geom = gymutil.WireframeSphereGeometry(0.02, 12, 12, sphere_pose, color=(1, 0, 0))
 
         verts = sphere_geom.instance_verts(pose)
         colors = np.empty(1, dtype=gymapi.Vec3.dtype)
-        colors[0] = (1, 1, 0)
-        self.gym.add_lines(self.viewer,self.env_list[0], sphere_geom.num_lines(), verts, colors)
+        # colors = (1, 1, 0)
+        self.gym.add_lines(self.viewer,self.env_list[0], sphere_geom.num_lines(), verts, sphere_geom.colors())
 
 class World(object):
     def __init__(self, gym_instance, sim_instance, env_ptr, world_params=None, w_T_r=None):

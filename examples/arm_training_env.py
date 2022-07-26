@@ -35,6 +35,8 @@ from storm_kit.differentiable_robot_model.coordinate_transform import quaternion
 from storm_kit.mpc.task.reacher_task import ReacherTask
 np.set_printoptions(precision=2)
 
+import rospy
+
 
 
 class IsaacGymEnv():
@@ -111,7 +113,101 @@ class TahomaEnv(IsaacGymEnv):
         pose_reached = self.pose_reached()
         if (pose_reached): print('######################REACHED#####################')
         self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
-        self.move_robot()
+        q_des = self.move_robot()
+        self.draw_lines()
+        # done = np.array([False, False])
+        # reward = self.get_reward(pose_reached, action)
+        # ob = self.get_obs()
+        # return ob, reward, done, None
+    
+    def close(self):
+        self.mpc_control.close()
+
+    def set_goal(self, pose:np.ndarray):
+        goal_pose = gymapi.Transform()
+        goal_pose.p = gymapi.Vec3(pose[0], pose[1], pose[2]) 
+        goal_pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
+        pose = copy.deepcopy(self.w_T_r.inverse() * goal_pose)
+
+        g_pos = np.zeros(3)
+        g_q = np.zeros(4)
+        g_pos[0] = pose.p.x
+        g_pos[1] = pose.p.y
+        g_pos[2] = pose.p.z
+        g_q[0] = pose.r.w
+        g_q[1] = pose.r.x
+        g_q[2] = pose.r.y
+        g_q[3] = pose.r.z
+
+        self.mpc_control.update_params(goal_ee_pos=g_pos, goal_ee_quat=g_q)
+
+
+    # Output: Returns if goal pose was reached
+    # TODO Include Quaternion 
+    def pose_reached(self)->bool:
+        g_pos = np.ravel(self.mpc_control.controller.rollout_fn.goal_ee_pos.cpu().numpy())
+        g_q = np.ravel(self.mpc_control.controller.rollout_fn.goal_ee_quat.cpu().numpy())
+
+        current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr)) 
+        filtered_state_mpc = current_robot_state
+        curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
+        curr_state_tensor = torch.as_tensor(curr_state, **self.tensor_args).unsqueeze(0)
+        pose_state = self.mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
+        e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
+        e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
+        self.ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
+        self.ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
+
+        test = np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z]))
+        print(test)
+        return test < 0.002
+        #return np.linalg.norm(g_pos - np.ravel([self.ee_pose.p.x, self.ee_pose.p.y, self.ee_pose.p.z])) < 0.002# or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))<0.1)
+
+    def move_robot(self):
+        current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
+        command = self.mpc_control.get_command(self.t_step, current_robot_state, control_dt=self.sim_dt, WAIT=False)
+        q_des = copy.deepcopy(command['position'])
+        print(q_des)
+        self.robot_sim.command_robot_position(q_des, self.env_ptr, self.robot_ptr)
+        return q_des
+
+    def draw_lines(self):
+        self.gym_instance.clear_lines()
+        w_robot_coord = CoordinateTransform(trans=self.w_T_robot[0:3,3].unsqueeze(0),
+                                        rot=self.w_T_robot[0:3,0:3].unsqueeze(0))
+        top_trajs = self.mpc_control.top_trajs.cpu().float()
+        n_p, n_t = top_trajs.shape[0], top_trajs.shape[1]
+        w_pts = w_robot_coord.transform_point(top_trajs.view(n_p * n_t, 3)).view(n_p, n_t, 3)
+
+        top_trajs = w_pts.cpu().numpy()
+        color = np.array([0.0, 1.0, 0.0])
+        for k in range(top_trajs.shape[0]):
+            pts = top_trajs[k,:,:]
+            color[0] = float(k) / float(top_trajs.shape[0])
+            color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
+            self.gym_instance.draw_lines(pts, color=color)
+
+# Class for Real Tahoma Robot
+class Tahoma(IsaacGymEnv):
+    def __init__(self, args, gym_instance):
+        super().__init__(args, gym_instance)
+        self.ee_pose = gymapi.Transform()
+        rospy.Subscriber('joint_states', JointState, callback)
+        cmd_pub = rospy.Publisher('/joint_group_vel_controller/command', Float64MultiArray, queue_size=1)
+
+    def callback():
+
+    def compose_msg():
+
+    def synchronize():
+
+    def step(self, action):
+        self.gym_instance.step()
+        self.t_step += self.sim_dt
+        pose_reached = self.pose_reached()
+        if (pose_reached): print('######################REACHED#####################')
+        self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+        q_des = self.move_robot()
         self.draw_lines()
 
         pose = np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707])
@@ -171,7 +267,9 @@ class TahomaEnv(IsaacGymEnv):
         current_robot_state = copy.deepcopy(self.robot_sim.get_state(self.env_ptr, self.robot_ptr))
         command = self.mpc_control.get_command(self.t_step, current_robot_state, control_dt=self.sim_dt, WAIT=False)
         q_des = copy.deepcopy(command['position'])
+        print(q_des)
         self.robot_sim.command_robot_position(q_des, self.env_ptr, self.robot_ptr)
+        return q_des
 
     def draw_lines(self):
         self.gym_instance.clear_lines()

@@ -21,7 +21,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.#
 """ Example spawning a robot in gym 
-
 """
 import copy
 from isaacgym import gymapi
@@ -47,7 +46,7 @@ import time
 import yaml
 import argparse
 import numpy as np
-# import numpy.typing as npt
+import numpy.typing as npt
 from quaternion import quaternion, from_rotation_vector, from_rotation_matrix
 import matplotlib.pyplot as plt
 
@@ -63,29 +62,8 @@ from storm_kit.util_file import get_mpc_configs_path as mpc_configs_path
 from storm_kit.differentiable_robot_model.coordinate_transform import quaternion_to_matrix, CoordinateTransform
 from storm_kit.mpc.task.reacher_task import ReacherTask
 np.set_printoptions(precision=2)
-import rospy
 
-
-from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64MultiArray, MultiArrayDimension
-
-import threading
-
-lock = threading.Lock()
-
-position, velocity = None, None
-
-def callback(msg):
-    global position
-    global velocity
-    global lock
-    with lock:
-        if len(msg.position) == 6:
-            position = msg.position
-            velocity = msg.velocity
-
-
-def mpc_robot_interactive(args, gym_instance, cmd_pub):
+def mpc_robot_interactive(args, gym_instance):
     vis_ee_target = True
     robot_file = args.robot + '.yml'
     task_file = args.robot + '_reacher_collision.yml'
@@ -135,7 +113,6 @@ def mpc_robot_interactive(args, gym_instance, cmd_pub):
     plane_params.static_friction = 1
     plane_params.dynamic_friction = 1
     plane_params.restitution = 0
-
     # create the ground plane
     gym.add_ground(sim, plane_params)'''
 
@@ -299,20 +276,9 @@ def mpc_robot_interactive(args, gym_instance, cmd_pub):
         q_des = copy.deepcopy(command['position'])
         robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
 
-    pub = rospy.Publisher('chatter', Float64MultiArray, queue_size=10)
-    rate = rospy.Rate(10) # 10hz
-
-    global position
-    global velocity
-    while not position:
-        print('waiting for initial robot position')
-        rospy.sleep(0.1)
-    current_robot_state2 = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-
     while(i > -100):
         try:
             gym_instance.step()
-            # Update goal for STORM
             if(vis_ee_target):
                 pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
                 pose = copy.deepcopy(w_T_r.inverse() * pose)
@@ -331,97 +297,27 @@ def mpc_robot_interactive(args, gym_instance, cmd_pub):
             
 
             t_step += sim_dt
-
-            # Synchronize real robot and sim robot
-            global lock
-            with lock:
-                # Get position from ROS subscruber /joint_states
-                if position:
-                    print(position)
-                    # current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-                    current_robot_state2['position'] = np.asarray(position)
-                    current_robot_state2['velocity'] = np.asarray(velocity)
-
-                    # # TODO..fixme:: storm's robot model differs from the actual model, i.e. the joints have a different order
-                    current_robot_state2['position'][0] = position[2]
-                    current_robot_state2['velocity'][0] = velocity[2] 
-                    current_robot_state2['position'][2] = position[0] 
-                    current_robot_state2['velocity'][2] = velocity[0]
-                    # Set robot state in IsaacGym Sim
-
-                    # Synchronize
-                    robot_sim.set_robot_state(current_robot_state2['position'], current_robot_state2['velocity'], env_ptr, robot_ptr)
-
-                    # position_rearranged = copy.deepcopy(np.asarray(position))
-                    # position_rearranged[0] = position[2]
-                    # position_rearranged[2] = position[0]
-
-                    # if np.linalg.norm(np.asarray(position_rearranged[0:3]) - current_robot_state['position'][0:3]) > 1:
-                    #     print('SE ACABO: ', np.linalg.norm(np.asarray(position_rearranged[0:3]) - current_robot_state['position'][0:3]))
-                    #     print(position_rearranged[0:3])
-                    #     print(current_robot_state['position'][0:3])
-                    #     break
+            
+            current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
+            
 
             
-            """
-            current_robot_state = 
-            {'name': ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint'], 'position': array([ 0.48, -1.41,  0.85,  0.57,  1.92,  3.12], dtype=float32), 'velocity': array([-0.02,  0.  , -0.03,  0.04,  0.04,  0.06], dtype=float32), 'acceleration': array([-0.,  0., -0.,  0.,  0.,  0.], dtype=float32)}
+            command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
 
-
-            rostopic echo /joint_states
-            ---
-            header:
-                  seq: 33381
-                  stamp:
-                    secs: 1656368789
-                    nsecs: 871852502
-                  frame_id: ''
-                name:                        #STORM
-                  - arm_elbow_joint          #pan
-                  - arm_shoulder_lift_joint  #lift
-                  - arm_shoulder_pan_joint   #elbow
-                  - arm_wrist_1_joint        #arm_wrist_1_joint
-                  - arm_wrist_2_joint        #arm_wrist_1_joint
-                  - arm_wrist_3_joint        #arm_wrist_1_joint
-                position: [-1.5649449825286865, -0.7858765882304688, -0.6071684996234339, 3.354989691371582, 4.7633538246154785, 0.4521508514881134]
-                velocity: [-0.0, 0.0, -0.0, 0.0, 0.0, 0.0]
-                effort: [-2.280313730239868, 1.7447588443756104, -0.11303969472646713, -0.47362852096557617, 0.0365774892270565, 0.04655815660953522]
-            ---
-
-
-
-            """
-            # global lock
-            # with lock:
-            #     if position:
-                    # print(position)
-                    # current_robot_state['position'] = np.asarray(position)
-                    # current_robot_state['velocity'] = np.asarray(velocity)
-
-                    # # TODO..fixme:: storm's robot model differs from the actual model, i.e. the joints have a different order
-                    # current_robot_state['position'][0] = position[2]
-                    # current_robot_state['velocity'][0] = velocity[2] 
-                    # current_robot_
-                    # state['position'][2] = position[0] 
-                    # current_robot_state['velocity'][2] = velocity[0] 
-
-            # move_robot()
-            # current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-            command = mpc_control.get_command(t_step, current_robot_state2, control_dt=sim_dt, WAIT=False)
-
-            filtered_state_mpc = current_robot_state2 #mpc_control.current_state
+            filtered_state_mpc = current_robot_state #mpc_control.current_state
             curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
 
             curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
             # get position command:
             q_des = copy.deepcopy(command['position'])
             qd_des = copy.deepcopy(command['velocity']) #* 0.5
-            qdd_des = copy.deepcopy(command['acceleration'])
+            #qdd_des = copy.deepcopy(command['acceleration'])
+            
             ee_error = mpc_control.get_current_error(filtered_state_mpc)
-
-            # Updates green mug/cup in simulation 
+             
             pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
             
+            # get current pose:
             e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
             e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
             ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
@@ -438,23 +334,11 @@ def mpc_robot_interactive(args, gym_instance, cmd_pub):
             #num += 0.1
             # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
             #q_des = np.array([num, 0.0, 0.0, 0.0, 0.0, 0.0])
-            # robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
-            
-            # ROS publish command            
-            command_msg = Float64MultiArray()
-            dim = [MultiArrayDimension()]
-            dim[0].label = ''
-            dim[0].size = 6
-            dim[0].stride = 0
-            command_msg.layout.dim = dim
-            command_msg.layout.data_offset = 0
-            command_msg.data = [qd_des[0], qd_des[1], qd_des[2], qd_des[3], qd_des[4], qd_des[5]]
-            cmd_pub.publish(command_msg)
-
+            print(qd_des)
+            robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
             #current_state = command
             #move_robot()
-
-            #  draw_lines() 
+                        
             gym_instance.clear_lines()
             top_trajs = mpc_control.top_trajs.cpu().float()#.numpy()
             n_p, n_t = top_trajs.shape[0], top_trajs.shape[1]
@@ -477,12 +361,11 @@ def mpc_robot_interactive(args, gym_instance, cmd_pub):
             gym_instance.draw_lines(ptsX, color=[0.5,0.0,0.0])
             gym_instance.draw_lines(ptsY, color=[0.0,0.5,0.0])
             gym_instance.draw_lines(ptsZ, color=[0.0,0.0,0.5])
-
-
-           
+            
             i += 1
 
             
+
             
         except KeyboardInterrupt:
             print('Closing')
@@ -492,11 +375,7 @@ def mpc_robot_interactive(args, gym_instance, cmd_pub):
     return 1 
     
 if __name__ == '__main__':
-
-    rospy.init_node('test')
-    rospy.Subscriber('joint_states', JointState, callback)
-    cmd_pub = rospy.Publisher('/joint_group_vel_controller/command', Float64MultiArray, queue_size=1)
-
+    
     # instantiate empty gym:
     parser = argparse.ArgumentParser(description='pass args')
     parser.add_argument('--robot', type=str, default='ur16e', help='Robot to spawn')
@@ -512,16 +391,4 @@ if __name__ == '__main__':
     gym_instance = Gym(**sim_params)
     
     
-    mpc_robot_interactive(args, gym_instance, cmd_pub)
-
-    print('Calling rospy.spin()')
-
-    rospy.spin()
-
-#     rostopic pub /joint_group_vel_controller/command std_msgs/Float64MultiArray --  "layout:
-#   dim:
-#   - label: ''
-#     size: 6
-#     stride: 0
-#   data_offset: 0
-# data:  [0, 0, 0, 0, 0, 0.3]"
+    mpc_robot_interactive(args, gym_instance)

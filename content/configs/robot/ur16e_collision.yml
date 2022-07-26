@@ -28,4 +28,7 @@ collision_spheres:
           "radius": 0.0774
     wrist_3_link:
         - "center": [0.0, 0.0924, 0.0031]
-          "radius": 0.0 #0.0549
+          "radius": 0.351
+    gripper_link:
+        - "center": [0.0, 0.0, 0.4405]
+          "radius": 0.0425 

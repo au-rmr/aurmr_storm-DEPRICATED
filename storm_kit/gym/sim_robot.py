@@ -149,6 +149,13 @@ class RobotSim():
         robot_dof_props['damping'].fill(40.0) # To avoidxb oscilaatuions?
         robot_dof_props['stiffness'][-2:] = 100.0
         robot_dof_props['damping'][-2:] = 5.0
+
+        # for velocity control:
+        # robot_dof_props['driveMode'].fill(gymapi.DOF_MODE_VEL)
+        # robot_dof_props['stiffness'].fill(0.0) # = self.joint_stiffnness[:self.num_dofs]
+        # robot_dof_props['damping'].fill(400.0) # To avoidxb oscilaatuions?
+        # robot_dof_props['stiffness'][-2:] = 100.0
+        # robot_dof_props['damping'][-2:] = 5.0
         
 
         self.gym.set_actor_dof_properties(env_handle, robot_handle, robot_dof_props)            
@@ -188,6 +195,8 @@ class RobotSim():
     def command_robot_position(self, q_des, env_handle, robot_handle):
         self.gym.set_actor_dof_position_targets(env_handle, robot_handle, np.float32(q_des))
 
+    def command_robot_velocity(self, qd_des, env_handle, robot_handle):
+        self.gym.set_actor_dof_velocity_targets(env_handle, robot_handle, np.float32(qd_des))
 
     def set_robot_state(self, q_des, qd_des, env_handle, robot_handle):
         robot_dof_states = copy.deepcopy(self.gym.get_actor_dof_states(env_handle, robot_handle,

@@ -105,8 +105,6 @@ class TahomaEnv(IsaacGymEnv):
         super().__init__(args, gym_instance)
         self.ee_pose = gymapi.Transform()
 
-
-
     def step(self, action):
         self.gym_instance.step()
         self.t_step += self.sim_dt
@@ -115,6 +113,12 @@ class TahomaEnv(IsaacGymEnv):
         self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
         self.move_robot()
         self.draw_lines()
+
+        pose = np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707])
+        goal_pose = gymapi.Transform()
+        goal_pose.p = gymapi.Vec3(pose[0], pose[1], pose[2]) 
+        goal_pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
+        self.gym_instance.draw_sphere(goal_pose)
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)
         # ob = self.get_obs()

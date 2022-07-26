@@ -140,13 +140,6 @@ class ArmBase(RolloutBase):
         self.link_pos_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3), **self.tensor_args)
         self.link_rot_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3, 3), **self.tensor_args)
 
-        # self.rollout_time = exp_params['time']
-        # self.cost_time = 0
-        # self.total_time = 0
-
-    # def get_time(self):
-    #     return self.rollout_time, self.cost_time
-
     def cost_fn(self, state_dict, action_batch, no_coll=False, horizon_cost=True):
         
         ee_pos_batch, ee_rot_batch = state_dict['ee_pos_seq'], state_dict['ee_rot_seq']
@@ -259,9 +252,9 @@ class ArmBase(RolloutBase):
         # self.total_time += self.dynamics_model.dt
         # print(self.total_time)
         # if self.total_time > 6.3:
-        tmp = self.get_time()
-        cprint.info(self.rollout_time)
-        cprint.warn(self.cost_time)
+        # tmp = self.get_time()
+        # cprint.info(self.rollout_time)
+        # cprint.warn(self.cost_time)
         return sim_trajs
 
     def update_params(self, retract_state=None):

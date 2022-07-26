@@ -201,7 +201,7 @@ class Controller(ABC):
     @abstractmethod
     def generate_rollouts(self, state):
         pass
-
+        
     def optimize(self, state, calc_val=False, shift_steps=1, n_iters=None):
         """
         Optimize for best action at current state
@@ -272,7 +272,7 @@ class Controller(ABC):
         info['entropy'].append(self.entropy)
 
         self.num_steps += 1
-
+        
         return curr_action_seq.to(inp_device, dtype=inp_dtype), value, info
 
     def get_optimal_value(self, state):

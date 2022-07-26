@@ -81,6 +81,8 @@ class ControlProcess(object):
         self.truncate_time = 0
         self.integrate_time = 0
 
+        self.time_cost = []
+
     def predict_next_state(self, t_step, curr_state):
         # predict next state
         # given current t_step, integrate to t_step+mpc_dt
@@ -173,6 +175,7 @@ class ControlProcess(object):
             self.top_values = command_data['top_values']
             self.top_trajs = command_data['top_trajs']
             self.top_idx = command_data['top_idx']
+            self.time_cost = command_data['time_cost']
         self.start_time2 += time.time() - start_time2
             
             
@@ -187,7 +190,7 @@ class ControlProcess(object):
         integrate_time = time.time()
         act = self.controller.rollout_fn.dynamics_model.integrate_action_step(command_buffer[0], self.control_dt)
         self.integrate_time += time.time() - integrate_time
-        return act, command_tstep_buffer, self.command[1], command_buffer
+        return act, command_tstep_buffer, self.command[1], command_buffer, self.time_cost
     
     def truncate_command(self, command, trunc_tstep, command_tstep):
         #print(trunc_tstep, command_tstep[:4])
@@ -256,11 +259,11 @@ def optimize_process(control_string, opt_queue, result_queue):
         top_idx = controller.top_idx
         top_values = controller.top_values
         top_trajs = controller.top_trajs
-        # print('HI',controller.rollout_fn.get_time())
+        time_cost = controller.rollout_fn.get_time()
         command[0] = command[0].cpu().numpy()
         
         result = {'command':command, 't_step': opt_data['t_step'], 'mpc_dt': mpc_time,
-                  'top_values':top_values, 'top_trajs':top_trajs, 'top_idx':top_idx}
+                  'top_values':top_values, 'top_trajs':top_trajs, 'top_idx':top_idx, 'time_cost':time_cost}
         result_queue.put(result)
         i = time.time() - start_time
     return True

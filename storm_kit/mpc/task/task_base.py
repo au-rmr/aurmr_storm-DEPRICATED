@@ -64,13 +64,13 @@ class BaseTask():
         if(WAIT):
             next_command, val, info, best_action = self.control_process.get_command_debug(t_step, state_tensor.numpy(), control_dt=control_dt)
         else:
-            next_command, val, info, best_action = self.control_process.get_command(t_step, state_tensor.numpy(), control_dt=control_dt)
+            next_command, val, info, best_action, time_cost = self.control_process.get_command(t_step, state_tensor.numpy(), control_dt=control_dt)
 
         qdd_des = next_command
         self.prev_qdd_des = qdd_des
         cmd_des = self.state_filter.integrate_acc(qdd_des)
 
-        return cmd_des
+        return cmd_des, time_cost
 
 
 

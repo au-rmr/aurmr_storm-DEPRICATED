@@ -27,10 +27,16 @@ import numpy as np
 from ...mpc.utils.state_filter import JointStateFilter
 from ...mpc.utils.mpc_process_wrapper import ControlProcess
 
+import time
+
 class BaseTask(): 
     def __init__(self, tensor_args={'device':"cpu", 'dtype':torch.float32}):
         self.tensor_args = tensor_args
         self.prev_qdd_des = None
+
+        self.state_filter_time = 0
+        self.integrate_acc_time = 0
+
     def init_aux(self):
         self.state_filter = JointStateFilter(filter_coeff=self.exp_params['state_filter_coeff'], dt=self.exp_params['control_dt'])
         
@@ -58,7 +64,10 @@ class BaseTask():
 
         if(self.state_filter.cmd_joint_state is None):
             curr_state['velocity'] *= 0.0
+        filter_time = time.time()
         filt_state = self.state_filter.filter_joint_state(curr_state)
+        self.state_filter_time += time.time() - filter_time
+        print('state_filter_time', self.state_filter_time)
         state_tensor = self._state_to_tensor(filt_state)
 
         if(WAIT):
@@ -68,8 +77,10 @@ class BaseTask():
 
         qdd_des = next_command
         self.prev_qdd_des = qdd_des
+        acc_time = time.time()
         cmd_des = self.state_filter.integrate_acc(qdd_des)
-
+        self.integrate_acc_time += time.time() - acc_time
+        print('acc_time', self.integrate_acc_time)
         return cmd_des, time_cost
 
 

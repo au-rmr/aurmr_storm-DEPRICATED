@@ -186,10 +186,12 @@ class ControlProcess(object):
         truncate_time = time.time()
         command_buffer, command_tstep_buffer = self.truncate_command(self.command[0], t_step, self.command_tstep)
         self.truncate_time += time.time() - truncate_time
+        print('truncare',self.truncate_time)
         #print(command_buffer.shape)
         integrate_time = time.time()
         act = self.controller.rollout_fn.dynamics_model.integrate_action_step(command_buffer[0], self.control_dt)
         self.integrate_time += time.time() - integrate_time
+        print('integrate', self.integrate_time)
         return act, command_tstep_buffer, self.command[1], command_buffer, self.time_cost
     
     def truncate_command(self, command, trunc_tstep, command_tstep):

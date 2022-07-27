@@ -201,10 +201,12 @@ class ArmBase(RolloutBase):
                 coll_cost = self.robot_self_collision_cost.forward(state_batch[:,:,:self.n_dofs])
                 #print('self collision: ', coll_cost)
                 cost += coll_cost
+                print(torch.sum(coll_cost))
             if self.exp_params['cost']['primitive_collision']['weight'] > 0:
                 coll_cost = self.primitive_collision_cost.forward(link_pos_batch, link_rot_batch)
                 #print('primitive:', coll_cost)
                 cost += coll_cost
+                # print(coll_cost)
             if self.exp_params['cost']['voxel_collision']['weight'] > 0:
                 coll_cost = self.voxel_collision_cost.forward(link_pos_batch, link_rot_batch)
                 cost += coll_cost

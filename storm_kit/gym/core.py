@@ -176,8 +176,8 @@ class World(object):
                 dims = cube[obj]['dims']
                 pose = cube[obj]['pose']
                 self.add_table(dims, pose, color=color)
-            self.spawn_collision_object("urdf/stand/stand.urdf")
-            self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
+            # self.spawn_collision_object("urdf/stand/stand.urdf")
+            # self.spawn_collision_object("urdf/pod/pod.urdf", translation=POD_TRANSFORM, rotation=POD_ROTATION)
 
     
     def add_table(self, table_dims, table_pose, color=[1.0,0.0,0.0]):

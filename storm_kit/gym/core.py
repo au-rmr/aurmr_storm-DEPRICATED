@@ -21,6 +21,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.#
 import numpy as np
+import math
 try:
     from  isaacgym import gymapi
     from isaacgym import gymutil
@@ -128,6 +129,16 @@ class Gym(object):
 
         self.gym.add_lines(self.viewer,self.env_list[env_idx],pts.shape[0] - 1,verts, colors)
         #self.gym.add_lines(self.viewer,self.env_list[env_idx],pts.shape[0] - 1,verts, colors)
+
+    def draw_sphere(self, pose):
+        sphere_rot = gymapi.Quat.from_euler_zyx(0.5 * math.pi, 0, 0)
+        sphere_pose = gymapi.Transform(r=sphere_rot)
+        sphere_geom = gymutil.WireframeSphereGeometry(0.02, 12, 12, sphere_pose, color=(1, 0, 0))
+
+        verts = sphere_geom.instance_verts(pose)
+        colors = np.empty(1, dtype=gymapi.Vec3.dtype)
+        # colors = (1, 1, 0)
+        self.gym.add_lines(self.viewer,self.env_list[0], sphere_geom.num_lines(), verts, sphere_geom.colors())
 
 class World(object):
     def __init__(self, gym_instance, sim_instance, env_ptr, world_params=None, w_T_r=None):

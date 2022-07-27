@@ -5,13 +5,15 @@ from storm_kit.util_file import get_configs_path, get_gym_configs_path, join_pat
 import rospy
 
 def run_env(env):
-    while True:
+    rate = rospy.Rate(20)
+    while not rospy.is_shutdown():
         try:
             env.step(1)
         except KeyboardInterrupt:
             print('Closing')
             done = True
             break
+        rate.sleep()
     
     env.close()
 

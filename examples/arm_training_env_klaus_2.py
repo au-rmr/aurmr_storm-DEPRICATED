@@ -162,7 +162,11 @@ class Tahoma(IsaacGymEnv):
             pass
             # Need to refrshe the topic otherwise the robot will keep execute the last one even.
             # self.send_cmd([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
-        
+        pose = np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707])
+        goal_pose = gymapi.Transform()
+        goal_pose.p = gymapi.Vec3(self.goal[0], self.goal[1], self.goal[2]) 
+        goal_pose.r = gymapi.Quat(self.goal[3], self.goal[4], self.goal[5], self.goal[6])
+        self.gym_instance.draw_sphere(goal_pose)
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)
         # ob = self.get_obs()

@@ -335,7 +335,8 @@ def mpc_robot_interactive(args, gym_instance):
             
             #num += 0.1
             # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
-            #q_des = np.array([num, 0.0, 0.0, 0.0, 0.0, 0.0])
+            # if i == 0: tmp = copy.deepcopy(command['position']) 
+            # q_des = np.array([tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], q_des[5]])
             robot_sim.command_robot_position(q_des, env_ptr, robot_ptr)
             #current_state = command
             #move_robot()

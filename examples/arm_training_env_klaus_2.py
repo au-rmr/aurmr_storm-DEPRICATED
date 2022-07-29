@@ -162,7 +162,7 @@ class Tahoma(IsaacGymEnv):
             pass
             # Need to refrshe the topic otherwise the robot will keep execute the last one even.
             # self.send_cmd([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
-        pose = np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707])
+
         goal_pose = gymapi.Transform()
         goal_pose.p = gymapi.Vec3(self.goal[0], self.goal[1], self.goal[2]) 
         goal_pose.r = gymapi.Quat(self.goal[3], self.goal[4], self.goal[5], self.goal[6])
@@ -181,7 +181,7 @@ class Tahoma(IsaacGymEnv):
     # callback for goal setting from state machine(or from vision team)
     def callback_GP(self, msg):
         p = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
-        q = np.array([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+        q = np.array([msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z])
         self.goal = np.concatenate((p, q), axis=None)
 
     def callback_AC(self, msg):

@@ -140,17 +140,15 @@ class Tahoma(IsaacGymEnv):
         
 
     def step(self, action):
-        self.gym_instance.step()
-        self.t_step += self.sim_dt
-        self.synchronize()
         while (self.goal is None):
             print("Waiting for goal.")
             rospy.sleep(1)
-        #print("Current goal: ", self.goal)
-        # self.set_goal(np.array([0.5, 1.2, 0.0, 0,0.707,0, 0.707]))
+        self.gym_instance.step()
+        self.t_step += self.sim_dt
+        self.synchronize()
+        self.set_goal()
         # Calculate MPC command
         command = self.get_robot_command()
-        self.set_goal(self.goal)
         if self.activate_control: 
             # Send flag to state machine
             self.result_pub.publish(Bool(data=self.pose_reached())) 
@@ -162,11 +160,8 @@ class Tahoma(IsaacGymEnv):
             pass
             # Need to refrshe the topic otherwise the robot will keep execute the last one even.
             # self.send_cmd([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) 
-
-        goal_pose = gymapi.Transform()
-        goal_pose.p = gymapi.Vec3(self.goal[0], self.goal[1], self.goal[2]) 
-        goal_pose.r = gymapi.Quat(self.goal[3], self.goal[4], self.goal[5], self.goal[6])
-        self.gym_instance.draw_sphere(goal_pose)
+        self.draw_goal()
+        
         # done = np.array([False, False])
         # reward = self.get_reward(pose_reached, action)
         # ob = self.get_obs()
@@ -183,6 +178,7 @@ class Tahoma(IsaacGymEnv):
         p = np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
         q = np.array([msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z])
         self.goal = np.concatenate((p, q), axis=None)
+        
 
     def callback_AC(self, msg):
         self.activate_control = msg.data
@@ -231,10 +227,10 @@ class Tahoma(IsaacGymEnv):
         self.mpc_control.close()
 
     # set the goal for MPC controller
-    def set_goal(self, pose:np.ndarray):
+    def set_goal(self):
         goal_pose = gymapi.Transform()
-        goal_pose.p = gymapi.Vec3(pose[0], pose[1], pose[2]) 
-        goal_pose.r = gymapi.Quat(pose[3], pose[4], pose[5], pose[6])
+        goal_pose.p = gymapi.Vec3(self.goal[0], self.goal[1], self.goal[2]) 
+        goal_pose.r = gymapi.Quat(self.goal[3], self.goal[4], self.goal[5], self.goal[6])
         pose = copy.deepcopy(self.w_T_r.inverse() * goal_pose)
 
         g_pos = np.zeros(3)
@@ -249,7 +245,14 @@ class Tahoma(IsaacGymEnv):
 
         self.mpc_control.update_params(goal_ee_pos=g_pos, goal_ee_quat=g_q)
 
-
+    # draw the goal in issacgym
+    def draw_goal(self):
+        goal_pose = gymapi.Transform()
+        goal_pose.p = gymapi.Vec3(self.goal[0], self.goal[1], self.goal[2]) 
+        goal_pose.r = gymapi.Quat(self.goal[3], self.goal[4], self.goal[5], self.goal[6])
+        self.gym_instance.draw_sphere(goal_pose)
+    
+    
     # Output: Returns if goal pose was reached
     # TODO Include Quaternion 
     def pose_reached(self)->bool:

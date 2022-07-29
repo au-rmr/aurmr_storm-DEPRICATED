@@ -25,7 +25,7 @@
 use_cuda: True
 cuda_device_num: 0
 
-control_dt: 0.01
+control_dt: 0.05
 run_open_loop: False
 control_space: 'acc'
 float_dtype: 'float32'

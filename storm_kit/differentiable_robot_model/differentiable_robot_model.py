@@ -77,7 +77,7 @@ class DifferentiableRobotModel(torch.nn.Module):
 
     def __init__(
             self, urdf_path: str, learnable_rigid_body_config=None, name="",
-            tensor_args={'device':"cpu", 'dtype':torch.float32}):
+            tensor_args={'device':"device", 'dtype':torch.float32}):
 
         super().__init__()
 

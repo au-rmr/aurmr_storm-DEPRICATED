@@ -82,6 +82,7 @@ def create_dataset(robot_name):
     link_rot_seq = state_dict['link_rot_seq']
     # compute link poses
     cost = rollout_fn.robot_self_collision_cost.distance
+    print(cost)
     dist = cost(link_pos_seq, link_rot_seq)
 
 

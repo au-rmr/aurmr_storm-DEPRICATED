@@ -332,7 +332,8 @@ def mpc_robot_interactive(args, gym_instance):
 
             '''print(["{:.3f}".format(x) for x in ee_error], "{:.3f}".format(mpc_control.opt_dt),
                   "{:.3f}".format(mpc_control.mpc_dt))'''
-            
+            # 6182864.5000000000
+            # 985979.8750000000
             #num += 0.1
             # 1 is torso turn, 2 is drop arm, 3 is rotate arm, 4 is elbow (negative), 5 is forearm turn, 6 is wrist (negative)
             # if i == 0: tmp = copy.deepcopy(command['position']) 

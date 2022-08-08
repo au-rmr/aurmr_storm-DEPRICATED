@@ -136,6 +136,10 @@ class ArmBase(RolloutBase):
 
         self.link_pos_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3), **self.tensor_args)
         self.link_rot_seq = torch.zeros((1, 1, len(self.dynamics_model.link_names), 3, 3), **self.tensor_args)
+
+    def get_spheres(self):
+        return self.robot_self_collision_cost.coll.w_batch_link_spheres
+
     def cost_fn(self, state_dict, action_batch, no_coll=False, horizon_cost=True):
         
         ee_pos_batch, ee_rot_batch = state_dict['ee_pos_seq'], state_dict['ee_rot_seq']

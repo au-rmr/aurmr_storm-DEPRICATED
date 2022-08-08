@@ -3,56 +3,122 @@ robot: 'ur16e'
 collision_spheres:
     shoulder_link:
         - "center": [0.0, 0.0, 0.0] #x, y, z
-          "radius": 0.12
+          "radius": 0.05
     upper_arm_link:
-        - "center": [0.0, 0.0, 0.0]
-          "radius": 0.115 #0.5
-        - "center": [0.0, 0.0, 0.2304]
-          "radius": 0.115 #0.5
-        - "center": [0.0, 0.0, 0.445]
-          "radius": 0.0945 #0.5
-        - "center": [0.0, 0.0, 0.630]
-          "radius": 0.0945 #0.5
+        - "center": [-0.02, 0.0, 0.18]
+          "radius": 0.11 #0.5
+        # - "center": [-0.15, 0.0, 0.18]
+        #   "radius": 0.06 #0.5
+        - "center": [-0.2, 0.0, 0.18]
+          "radius": 0.06 #0.5
+        - "center": [-0.33, 0.0, 0.18]
+          "radius": 0.06 #0.5
+        - "center": [-0.47, 0.0, 0.18]
+          "radius": 0.075 #0.5
     forearm_link:
-        - "center": [0.0, 0.0, 0.0]
-          "radius": 0.1 #0.0849 #0.4
-        - "center": [0.0, 0.0, 0.170]
-          "radius": 0.1 #0.0851 #0.4
-        - "center": [0.0, 0.0, 0.340]
-          "radius": 0.1 #0.0851 #0.5
+        - "center": [0.0, 0.0, 0.04]
+          "radius": 0.05 #0.4
+        # - "center": [-0.06, 0.0, 0.04]
+        #   "radius": 0.06 #0.4
+        - "center": [-0.11, 0.0, 0.04]
+          "radius": 0.05 #0.4
+        # - "center": [-0.2, 0.0, 0.04]
+        #   "radius": 0.05 #0.5
+        - "center": [-0.22, 0.0, 0.04]
+          "radius": 0.05 #0.5
+        - "center": [-0.35, 0.0, 0.04]
+          "radius": 0.07 #0.5
     wrist_1_link:
-        - "center": [0.0, 0.1225, 0.0095]
-          "radius": 0.1 #0.0813
+        - "center": [0.0, 0.01, 0.0]
+          "radius": 0.055
     wrist_2_link:
-        - "center": [0.0, 0.1162, 0.007]
-          "radius": 0.1 #0.0774
+        - "center": [-0.0, -0.01, -0.01]
+          "radius": 0.055
     # wrist_3_link:
     #     - "center": [0.0, 0.0924, 0.0031]
     #       "radius": 0.05 #0.0549
     wrist_3_link:
-        - "center": [0.0, 0.0924, 0.0031]
-          "radius": 0.2 #0.0351
-        # # gripper lays flat pointing forward on y-axis
-        # # base link
-        # - "center": [0.0, 0.1539, 0.0031]
-        #   "radius": 0.0425
+        - "center": [0.0, 0.0, -0.03]
+          "radius": 0.035 #0.06 #0.0351
+        # gripper lays flat pointing forward on y-axis
+        # base link
+        - "center": [0.0, 0.0, 0.05]
+          "radius": 0.0425
         # # right bar
-        # - "center": [0.0611, 0.1903, 0.0031]
-        #   "radius": 0.0093
-        # - "center": [0.0675, 0.2262, 0.0031]
-        #   "radius": 0.0093
-        # # left bar - opposite
-        # - "center": [-0.0611, 0.1903, 0.0031]
-        #   "radius": 0.0093
-        # - "center": [-0.0675, 0.2262, 0.0031]
-        #   "radius": 0.0093
+        - "center": [0.068, 0.03, 0.09]
+          "radius": 0.01
+        - "center": [0.047, 0.03, 0.05]
+          "radius": 0.01
+        # left bar - opposite
+        - "center": [-0.068, -0.03, 0.09]
+          "radius": 0.01
+        - "center": [-0.047, -0.03, 0.05]
+          "radius": 0.01
         # # right distal phalanx
         # - "center": [0.0515, 0.2465, 0.0031]
         #   "radius": 0.0112
-        # - "center": [0.0452, 0.2724, 0.0031]
-        #   "radius": 0.0052
-        # # left distal phalanx - opposite
+        - "center": [-0.045, -0.02, 0.135]
+          "radius": 0.01 #0.0052
+        # left distal phalanx - opposite
         # - "center": [-0.0515, 0.2465, 0.0031]
         #   "radius": 0.05 #0.0112
-        # - "center": [-0.0452, 0.2724, 0.0031]
-        #   "radius": 0.05 #0.0052
+        - "center": [0.045, 0.02, 0.135]
+          "radius": 0.01 #0.0052
+
+
+# collision_spheres:
+#     shoulder_link:
+#         - "center": [0.0, 0.0, 0.0] #x, y, z
+#           "radius": 0.1
+#     upper_arm_link:
+#         - "center": [0.0, 0.0, 0.1]
+#           "radius": 0.1 #0.5
+#         # - "center": [0.0, 0.0, 0.2304]
+#         #   "radius": 0.115 #0.5
+#         # - "center": [0.0, 0.0, 0.445]
+#         #   "radius": 0.0945 #0.5
+#         # - "center": [0.0, 0.0, 0.630]
+#         #   "radius": 0.0945 #0.5
+#     forearm_link:
+#         - "center": [0.0, 0.0, 0.0]
+#           "radius": 0.0001 #0.0849 #0.4
+#         # - "center": [0.0, 0.0, 0.170]
+#         #   "radius": 0.0851 #0.4
+#         # - "center": [0.0, 0.0, 0.340]
+#         #   "radius": 0.0851 #0.5
+#     wrist_1_link:
+#         - "center": [0.0, 0.1225, 0.0095]
+#           "radius": 0.0001 #0.0813
+#     wrist_2_link:
+#         - "center": [0.0, 0.1162, 0.007]
+#           "radius": 0.0001 #0.0774
+#     # wrist_3_link:
+#     #     - "center": [0.0, 0.0924, 0.0031]
+#     #       "radius": 0.05 #0.0549
+#     wrist_3_link:
+#         - "center": [0.0, 0.0924, 0.0031]
+#           "radius": 0.0001 #0.0351
+#         # # gripper lays flat pointing forward on y-axis
+#         # # base link
+#         # - "center": [0.0, 0.1539, 0.0031]
+#         #   "radius": 0.0425
+#         # # right bar
+#         # - "center": [0.0611, 0.1903, 0.0031]
+#         #   "radius": 0.0093
+#         # - "center": [0.0675, 0.2262, 0.0031]
+#         #   "radius": 0.0093
+#         # # left bar - opposite
+#         # - "center": [-0.0611, 0.1903, 0.0031]
+#         #   "radius": 0.0093
+#         # - "center": [-0.0675, 0.2262, 0.0031]
+#         #   "radius": 0.0093
+#         # # right distal phalanx
+#         # - "center": [0.0515, 0.2465, 0.0031]
+#         #   "radius": 0.0112
+#         # - "center": [0.0452, 0.2724, 0.0031]
+#         #   "radius": 0.0052
+#         # # left distal phalanx - opposite
+#         # - "center": [-0.0515, 0.2465, 0.0031]
+#         #   "radius": 0.05 #0.0112
+#         # - "center": [-0.0452, 0.2724, 0.0031]
+#         #   "radius": 0.05 #0.0052

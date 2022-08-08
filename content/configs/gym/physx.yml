@@ -23,7 +23,7 @@
 physics_engine: 'physx'
 compute_device_id: 0
 graphics_device_id: 0
-headless: True
+headless: False
 sim_params:
   dt: 0.01
   substeps: 1

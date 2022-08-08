@@ -299,22 +299,22 @@ def mpc_robot_interactive(args, gym_instance):
             #print(jndex)    
             try:
                 gym_instance.step()
-                #print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
-                # if(vis_ee_target):
-                #     pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
-                #     pose = copy.deepcopy(w_T_r.inverse() * pose)
+                print(gym.get_actor_dof_position_targets(env_ptr, robot_ptr))
+                if(vis_ee_target):
+                    pose = copy.deepcopy(world_instance.get_pose(obj_body_handle))
+                    pose = copy.deepcopy(w_T_r.inverse() * pose)
 
-                #     if(np.linalg.norm(g_pos - np.ravel([pose.p.x, pose.p.y, pose.p.z])) > 0.00001 or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))>0.0)):
-                #         g_pos[0] = pose.p.x
-                #         g_pos[1] = pose.p.y
-                #         g_pos[2] = pose.p.z
-                #         g_q[1] = pose.r.x
-                #         g_q[2] = pose.r.y
-                #         g_q[3] = pose.r.z
-                #         g_q[0] = pose.r.w
+                    if(np.linalg.norm(g_pos - np.ravel([pose.p.x, pose.p.y, pose.p.z])) > 0.00001 or (np.linalg.norm(g_q - np.ravel([pose.r.w, pose.r.x, pose.r.y, pose.r.z]))>0.0)):
+                        g_pos[0] = pose.p.x
+                        g_pos[1] = pose.p.y
+                        g_pos[2] = pose.p.z
+                        g_q[1] = pose.r.x
+                        g_q[2] = pose.r.y
+                        g_q[3] = pose.r.z
+                        g_q[0] = pose.r.w
 
-                #         mpc_control.update_params(goal_ee_pos=g_pos,
-                #                                 goal_ee_quat=g_q)
+                        mpc_control.update_params(goal_ee_pos=g_pos,
+                                                goal_ee_quat=g_q)
                 
 
                 t_step += sim_dt
@@ -324,26 +324,26 @@ def mpc_robot_interactive(args, gym_instance):
                 
                 command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
 
-                # filtered_state_mpc = current_robot_state #mpc_control.current_state
-                # curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
+                filtered_state_mpc = current_robot_state #mpc_control.current_state
+                curr_state = np.hstack((filtered_state_mpc['position'], filtered_state_mpc['velocity'], filtered_state_mpc['acceleration']))
 
-                # curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
+                curr_state_tensor = torch.as_tensor(curr_state, **tensor_args).unsqueeze(0)
                 # get position command:
                 q_des = copy.deepcopy(command['position'])
-                #qd_des = copy.deepcopy(command['velocity']) #* 0.5
-                #qdd_des = copy.deepcopy(command['acceleration'])
+                qd_des = copy.deepcopy(command['velocity']) #* 0.5
+                qdd_des = copy.deepcopy(command['acceleration'])
                 
-                # ee_error = mpc_control.get_current_error(filtered_state_mpc)
+                ee_error = mpc_control.get_current_error(filtered_state_mpc)
                 
-                # pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
+                pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
                 
                 # get current pose:
-                # e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
-                # e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
-                # ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
-                # ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
-                # if(pose_reached()): print('##############################################REACHED##################')
-                # ee_pose = copy.deepcopy(w_T_r) * copy.deepcopy(ee_pose)
+                e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
+                e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
+                ee_pose.p = copy.deepcopy(gymapi.Vec3(e_pos[0], e_pos[1], e_pos[2]))
+                ee_pose.r = gymapi.Quat(e_quat[1], e_quat[2], e_quat[3], e_quat[0])
+                if(pose_reached()): print('##############################################REACHED##################')
+                ee_pose = copy.deepcopy(w_T_r) * copy.deepcopy(ee_pose)
                 
                 # if(vis_ee_target):
                 #     gym.set_rigid_transform(env_ptr, ee_body_handle, copy.deepcopy(ee_pose))
@@ -359,19 +359,19 @@ def mpc_robot_interactive(args, gym_instance):
                 #current_state = command
                 #move_robot()
                             
-                # gym_instance.clear_lines()
-                # top_trajs = mpc_control.top_trajs.cpu().float()#.numpy()
-                # n_p, n_t = top_trajs.shape[0], top_trajs.shape[1]
-                # w_pts = w_robot_coord.transform_point(top_trajs.view(n_p * n_t, 3)).view(n_p, n_t, 3)
+                gym_instance.clear_lines()
+                top_trajs = mpc_control.top_trajs.cpu().float()#.numpy()
+                n_p, n_t = top_trajs.shape[0], top_trajs.shape[1]
+                w_pts = w_robot_coord.transform_point(top_trajs.view(n_p * n_t, 3)).view(n_p, n_t, 3)
 
 
-                # top_trajs = w_pts.cpu().numpy()
-                # color = np.array([0.0, 1.0, 0.0])
-                # for k in range(top_trajs.shape[0]):
-                #     pts = top_trajs[k,:,:]
-                #     color[0] = float(k) / float(top_trajs.shape[0])
-                #     color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
-                #     gym_instance.draw_lines(pts, color=color)
+                top_trajs = w_pts.cpu().numpy()
+                color = np.array([0.0, 1.0, 0.0])
+                for k in range(top_trajs.shape[0]):
+                    pts = top_trajs[k,:,:]
+                    color[0] = float(k) / float(top_trajs.shape[0])
+                    color[1] = 1.0 - float(k) / float(top_trajs.shape[0])
+                    gym_instance.draw_lines(pts, color=color)
 
                 # # PT
                 # props = gym.get_actor_dof_properties(env_ptr, robot_ptr)

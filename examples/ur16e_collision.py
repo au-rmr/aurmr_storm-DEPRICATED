@@ -294,7 +294,8 @@ def mpc_robot_interactive(args, gym_instance):
                         mpc_control.update_params(goal_ee_pos=g_pos,
                                                 goal_ee_quat=g_q)
         start = time.time()
-        for jndex in range(1000):
+        while(True):
+        # for jndex in range(1000):
             startTimeStep = time.time()
             #print(jndex)    
             try:
